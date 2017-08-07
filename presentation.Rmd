@@ -1,0 +1,72 @@
+---
+title: "Análisis geoespacial"
+subtitle: "IMUC - Escuela de ciencia de datos"
+author: "Jhosse Paul Márquez Ruíz"
+date: "8 de julio de 2017"
+output: 
+  ioslides_presentation: 
+    incremental: yes
+    smaller: yes
+    widescreen: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Datos espaciales
+
+- Datos que representan ubicaciones, formas y tamaños de entidades en el planeta.
+- Generalmente acompañados de atributos o metadatos.
+- Inicialmente desarrollados para sistemas de información geográfica.
+- Por ejemplo, el [marco geoestadístico de México](http://www.inegi.org.mx/geo/contenidos/geoestadistica/m_geoestadistico.aspx)
+
+Estos objetos representan un reto para la ciencia de datos, ya que su almacenamiento
+y procesamiento no se realiza de manera convencional debido a su estructura.
+
+## Estructura de datos espaciales
+- Datos vectoriales:
+    + Puntos: Dimensión 1. Cada punto es representado por un par de codenadas (x, y).
+    + Líneas: Dimensión 2. Múltiples puntos conectados en un orden.
+    + Polígonos: Dimensión 2. Múltiples líneas conectadas. Estas líneas no se
+    intersectan y la última línea debe terminar en el inicio de la primera.
+
+- Datos raster: Representan mediciones sobre un espacio geográfico. Estas mediciones
+  son agrupadas en celdas que conforman una grilla. Cada celda debe representar
+  las mediciones en el área que abarque. El tamaño de la celda da la propiedad
+  de resolución.
+
+## Soporte en software
+- GIS:
+  + ArcGIS
+  + OpenGIS
+  + GRASS
+  + QGIS
+- Bases de datos espaciales:
+  + PostGIS
+  + SQL Server
+  + MySQL
+  + Redis
+- Lenguajes de programación:
+  + Python (shapely, geopy, ogr/gdal)
+  + C++ (GEOS, GDAL)
+  + Java (GeoTools)
+  + Scala (GeoSparkl, SpatialSpark)
+  + R
+
+## Librerías en R
+- Data structures
+  - sp
+  - rgdal
+  - rgeos
+  - sf
+  - raster
+  - maptools
+- Manipulation
+  - geosphere
+- Visualizaton
+  - plotkml
+  - ggplot2
+  - ggmap
+
+Más en la siguiente [liga](https://cran.r-project.org/web/views/Spatial.html)
