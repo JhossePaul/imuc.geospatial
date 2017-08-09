@@ -100,21 +100,21 @@
 
 <slide class=''><hgroup><h2>Datos espaciales</h2></hgroup><article  id="datos-espaciales" class="smaller ">
 
-<ul class = 'build'>
+<ul>
 <li>Datos que representan ubicaciones, formas y tamaños de entidades en el planeta.</li>
 <li>Generalmente acompañados de atributos o metadatos.</li>
 <li>Inicialmente desarrollados para sistemas de información geográfica.</li>
-<li>Por ejemplo, el <a href='http://www.inegi.org.mx/geo/contenidos/geoestadistica/m_geoestadistico.aspx' title=''>marco geoestadístico de México</a></li>
+<li>Por ejemplo, el <a href='marco_geoestadistico_mexico' title=''>marco geoestadístico de México</a></li>
 </ul>
 
 <p>Estos objetos representan un reto para la ciencia de datos, ya que su almacenamiento y procesamiento no se realiza de manera convencional debido a su estructura.</p>
 
 </article></slide><slide class=''><hgroup><h2>Estructura de datos espaciales</h2></hgroup><article  id="estructura-de-datos-espaciales" class="smaller ">
 
-<ul class = 'build'>
+<ul>
 <li>Datos vectoriales:
 
-<ul class = 'build'>
+<ul>
 <li>Puntos: Dimensión 1. Cada punto es representado por un par de codenadas (x, y).</li>
 <li>Líneas: Dimensión 2. Múltiples puntos conectados en un orden.</li>
 <li>Polígonos: Dimensión 2. Múltiples líneas conectadas. Estas líneas no se intersectan y la última línea debe terminar en el inicio de la primera.</li>
@@ -124,44 +124,213 @@
 
 </article></slide><slide class=''><hgroup><h2>Soporte en software</h2></hgroup><article  id="soporte-en-software" class="smaller ">
 
-<ul class = 'build'>
-<li>GIS:</li>
+<ul>
+<li>GIS:
+
+<ul>
 <li>ArcGIS</li>
 <li>OpenGIS</li>
 <li>GRASS</li>
 <li>QGIS</li>
-<li>Bases de datos espaciales:</li>
+</ul></li>
+<li>Bases de datos espaciales:
+
+<ul>
 <li>PostGIS</li>
 <li>SQL Server</li>
 <li>MySQL</li>
 <li>Redis</li>
-<li>Lenguajes de programación:</li>
+</ul></li>
+<li>Lenguajes de programación:
+
+<ul>
 <li>Python (shapely, geopy, ogr/gdal)</li>
 <li>C++ (GEOS, GDAL)</li>
 <li>Java (GeoTools)</li>
 <li>Scala (GeoSparkl, SpatialSpark)</li>
 <li>R</li>
+</ul></li>
 </ul>
 
 </article></slide><slide class=''><hgroup><h2>Librerías en R</h2></hgroup><article  id="librerias-en-r" class="smaller ">
 
-<ul class = 'build'>
-<li>Data structures</li>
+<ul>
+<li>Data structures
+
+<ul>
 <li>sp</li>
-<li>rgdal</li>
-<li>rgeos</li>
 <li>sf</li>
 <li>raster</li>
+</ul></li>
+<li>Manipulation
+
+<ul>
+<li>rgdal</li>
+<li>rgeos</li>
 <li>maptools</li>
-<li>Manipulation</li>
 <li>geosphere</li>
-<li>Visualizaton</li>
+</ul></li>
+<li>Visualizaton
+
+<ul>
 <li>plotkml</li>
 <li>ggplot2</li>
 <li>ggmap</li>
+</ul></li>
 </ul>
 
-<p>Más en la siguiente <a href='https://cran.r-project.org/web/views/Spatial.html' title=''>liga</a></p></article></slide>
+<p>Más en la siguiente <a href='cran_spatial_tasks' title=''>liga</a></p>
+
+</article></slide><slide class='segue dark nobackground level1'><hgroup class = 'auto-fadein'><h2>Data structures</h2></hgroup><article  id="data-structures" class="smaller ">
+
+</article></slide><slide class=''><hgroup><h2>Librerías con estructuras de datos espaciales</h2></hgroup><article  id="librerias-con-estructuras-de-datos-espaciales" class="smaller ">
+
+<h3>Clases de datos vectoriales en R</h3>
+
+<ul>
+<li>sp: Librería estándar para manipulación de datos vectoriales en R.</li>
+<li>sf: Experimental. Sigue el estándar ISO 19125-1:2004.</li>
+</ul>
+
+<h3>Clases de datos raster en R</h3>
+
+<ul>
+<li>sp: clase <code>SpatialGrid*</code></li>
+<li>raster: clases <code>Raster*</code></li>
+</ul>
+
+</article></slide><slide class=''><hgroup><h2>sp: Classes and methods for spatial data</h2></hgroup><article  id="sp-classes-and-methods-for-spatial-data" class="smaller ">
+
+<p>Todas las clases de la librería <code>sp</code> son S4, las que son de nuestr interés son:</p>
+
+<ul>
+<li><code>SpatialPoints*</code></li>
+<li><code>SpatialLines*</code></li>
+<li><code>SpatialMultiPoints*</code></li>
+<li><code>SpatialPolygons*</code></li>
+<li><code>SpatialGrid*</code></li>
+<li><code>SpatialPixels*</code></li>
+<li><code>CRS</code></li>
+</ul>
+
+<p>Todas estas clases están acompañadas de un constructor que permite incluir los metadatos en forma de un data.frame. Por ejemplo, <code>SpatialPointsDataFrame</code> recibe como argumento adicional los metadatos para cada punto.</p>
+
+</article></slide><slide class=''><hgroup><h2>SpatialPoints</h2></hgroup><article  id="spatialpoints" class="smaller ">
+
+<ul>
+<li>Por convención el formato default para coordenadas es (lon, lat).</li>
+<li>Además de especificar las coordenadas necesitamos especificar un CRS.</li>
+</ul>
+
+<pre class = 'prettyprint lang-r'>library(sp)                                      # Cargamos la librería sp
+library(raster)                                  # Cargamos la librería raster para usar el método print
+
+example_points &lt;- data.frame(                    # Creamos un data.frame con 10 coordenadas 
+  longitud = runif(10, -118, -87),               # Nota: La primera columna es la longitud
+  latitud = runif(10, 15, 32)
+)
+example_crs &lt;- CRS(&quot;+proj=longlat +datum=WGS84&quot;) # Creamos el sistema de coordenadas
+
+spatial_points &lt;- SpatialPoints(                 # Creamos un objeto de clase SpatialPoints
+  coords = example_points,
+  proj4string = example_crs
+)</pre>
+
+</article></slide><slide class=''><hgroup><h2>Métodos de <code>Spatial*</code></h2></hgroup><article  id="metodos-de-spatial" class="smaller ">
+
+<p><code>bbox</code> devuelve el <strong>bounding box</strong> o coordenadas extremas.</p>
+
+<pre class = 'prettyprint lang-r'>bbox(spatial_points)</pre>
+
+<pre >##                 min       max
+## longitud -117.80199 -87.80569
+## latitud    15.43646  30.66190</pre>
+
+<p><code>summary</code> devuelve el bounding box, el número de puntos y la proyección.</p>
+
+<pre class = 'prettyprint lang-r'>summary(spatial_points)</pre>
+
+<pre >## Object of class SpatialPoints
+## Coordinates:
+##                 min       max
+## longitud -117.80199 -87.80569
+## latitud    15.43646  30.66190
+## Is projected: FALSE 
+## proj4string :
+## [+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0]
+## Number of points: 10</pre>
+
+</article></slide><slide class=''><hgroup><h2>Métodos de <code>Spatial*</code> (cont.)</h2></hgroup><article  id="metodos-de-spatial-cont." class="smaller ">
+
+<p><code>proj4string</code> devuelve el string de proyección:</p>
+
+<pre class = 'prettyprint lang-r'>proj4string(spatial_points)</pre>
+
+<pre >## [1] &quot;+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0&quot;</pre>
+
+<p><code>coordinates</code> devuelve las coordenadas de los puntos:</p>
+
+<pre class = 'prettyprint lang-r'>coordinates(spatial_points)</pre>
+
+<pre >##         longitud  latitud
+##  [1,] -112.25088 17.84296
+##  [2,] -117.80199 27.49834
+##  [3,]  -91.55357 18.72923
+##  [4,]  -96.21031 15.43646
+##  [5,]  -92.73204 29.99005
+##  [6,]  -87.80569 22.97044
+##  [7,] -113.49109 19.81776
+##  [8,] -114.76892 16.30591
+##  [9,]  -91.18159 19.45157
+## [10,] -111.39086 30.66190</pre>
+
+</article></slide><slide class=''><hgroup><h2><code>SpatialPointsDataFrame</code></h2></hgroup><article  id="spatialpointsdataframe" class="smaller ">
+
+<p>Las clases <code>*DataFrame</code> crean objetos espaciales con metadatos adjuntos en un objeto <code>data.frame</code>.</p>
+
+<pre class = 'prettyprint lang-r'>metadata &lt;- data.frame(random_name = sample(LETTERS, 10))
+spatial_points_df &lt;- SpatialPointsDataFrame(
+  coords = spatial_points,
+  data = metadata,
+  proj4string = example_crs
+)
+str(spatial_points_df)</pre>
+
+<pre >## Formal class &#39;SpatialPointsDataFrame&#39; [package &quot;sp&quot;] with 5 slots
+##   ..@ data       :&#39;data.frame&#39;:  10 obs. of  1 variable:
+##   .. ..$ random_name: Factor w/ 10 levels &quot;A&quot;,&quot;F&quot;,&quot;J&quot;,&quot;K&quot;,..: 7 1 4 9 3 5 2 10 6 8
+##   ..@ coords.nrs : num(0) 
+##   ..@ coords     : num [1:10, 1:2] -112.3 -117.8 -91.6 -96.2 -92.7 ...
+##   .. ..- attr(*, &quot;dimnames&quot;)=List of 2
+##   .. .. ..$ : NULL
+##   .. .. ..$ : chr [1:2] &quot;longitud&quot; &quot;latitud&quot;
+##   ..@ bbox       : num [1:2, 1:2] -117.8 15.4 -87.8 30.7
+##   .. ..- attr(*, &quot;dimnames&quot;)=List of 2
+##   .. .. ..$ : chr [1:2] &quot;longitud&quot; &quot;latitud&quot;
+##   .. .. ..$ : chr [1:2] &quot;min&quot; &quot;max&quot;
+##   ..@ proj4string:Formal class &#39;CRS&#39; [package &quot;sp&quot;] with 1 slot
+##   .. .. ..@ projargs: chr &quot;+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0&quot;</pre>
+
+</article></slide><slide class=''><hgroup><h2>Métodos en <code>Spatial*DataFrame</code></h2></hgroup><article  id="metodos-en-spatialdataframe" class="smaller ">
+
+<p>Estas clases procuran simular un objeto <code>data.frame</code> en lo más posible. Podemos usar los métodos:</p>
+
+<ul>
+<li><code>merge</code></li>
+<li><code>summary</code></li>
+<li><code>dim</code></li>
+<li><code>head</code></li>
+<li><code>tail</code></li>
+<li><code>plot</code></li>
+<li><code>points</code></li>
+<li><code>print</code></li>
+<li><code>rbind</code></li>
+<li><code>show</code></li>
+<li><code>subset</code></li>
+<li><code>$ (extract)</code></li>
+<li><code>[ (extract)</code></li>
+<li><code>[[ (extract)</code></li>
+</ul></article></slide>
 
 
   <slide class="backdrop"></slide>

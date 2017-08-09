@@ -5,21 +5,16 @@ author: "Jhosse Paul Márquez Ruíz"
 date: "8 de julio de 2017"
 output: 
   ioslides_presentation: 
-    incremental: yes
     smaller: yes
     widescreen: yes
 ---
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
-```
 
 ## Datos espaciales
 
 - Datos que representan ubicaciones, formas y tamaños de entidades en el planeta.
 - Generalmente acompañados de atributos o metadatos.
 - Inicialmente desarrollados para sistemas de información geográfica.
-- Por ejemplo, el [marco geoestadístico de México](http://www.inegi.org.mx/geo/contenidos/geoestadistica/m_geoestadistico.aspx)
+- Por ejemplo, el [marco geoestadístico de México](marco_geoestadistico_mexico)
 
 Estos objetos representan un reto para la ciencia de datos, ya que su almacenamiento
 y procesamiento no se realiza de manera convencional debido a su estructura.
@@ -38,35 +33,144 @@ y procesamiento no se realiza de manera convencional debido a su estructura.
 
 ## Soporte en software
 - GIS:
-  + ArcGIS
-  + OpenGIS
-  + GRASS
-  + QGIS
+    + ArcGIS
+    + OpenGIS
+    + GRASS
+    + QGIS
 - Bases de datos espaciales:
-  + PostGIS
-  + SQL Server
-  + MySQL
-  + Redis
+    + PostGIS
+    + SQL Server
+    + MySQL
+    + Redis
 - Lenguajes de programación:
-  + Python (shapely, geopy, ogr/gdal)
-  + C++ (GEOS, GDAL)
-  + Java (GeoTools)
-  + Scala (GeoSparkl, SpatialSpark)
-  + R
+    + Python (shapely, geopy, ogr/gdal)
+    + C++ (GEOS, GDAL)
+    + Java (GeoTools)
+    + Scala (GeoSparkl, SpatialSpark)
+    + R
 
 ## Librerías en R
 - Data structures
-  - sp
-  - rgdal
-  - rgeos
-  - sf
-  - raster
-  - maptools
+    + sp
+    + sf
+    + raster
 - Manipulation
-  - geosphere
+    + rgdal
+    + rgeos
+    + maptools
+    - geosphere
 - Visualizaton
-  - plotkml
-  - ggplot2
-  - ggmap
+    + plotkml
+    + ggplot2
+    + ggmap
 
-Más en la siguiente [liga](https://cran.r-project.org/web/views/Spatial.html)
+Más en la siguiente [liga](cran_spatial_tasks)
+
+# Data structures
+
+## Librerías con estructuras de datos espaciales
+### Clases de datos vectoriales en R
+
+- sp: Librería estándar para manipulación de datos vectoriales en R.
+- sf: Experimental. Sigue el estándar ISO 19125-1:2004.
+
+### Clases de datos raster en R
+
+- sp: clase `SpatialGrid*`
+- raster: clases `Raster*`
+
+## sp: Classes and methods for spatial data
+Todas las clases de la librería `sp` son S4, las que son de nuestr interés son:
+
+- `SpatialPoints*`
+- `SpatialLines*`
+- `SpatialMultiPoints*`
+- `SpatialPolygons*`
+- `SpatialGrid*`
+- `SpatialPixels*`
+- `CRS`
+
+Todas estas clases están acompañadas de un constructor que permite incluir los
+metadatos en forma de un data.frame. Por ejemplo, `SpatialPointsDataFrame` recibe
+como argumento adicional los metadatos para cada punto.
+
+## SpatialPoints
+- Por convención el formato default para coordenadas es (lon, lat).
+- Además de especificar las coordenadas necesitamos especificar un CRS.
+
+```{r spatial_points}
+library(sp)                                      # Cargamos la librería sp
+library(raster)                                  # Cargamos la librería raster para usar el método print
+
+example_points <- data.frame(                    # Creamos un data.frame con 10 coordenadas 
+  longitud = runif(10, -118, -87),               # Nota: La primera columna es la longitud
+  latitud = runif(10, 15, 32)
+)
+example_crs <- CRS("+proj=longlat +datum=WGS84") # Creamos el sistema de coordenadas
+
+spatial_points <- SpatialPoints(                 # Creamos un objeto de clase SpatialPoints
+  coords = example_points,
+  proj4string = example_crs
+)
+```
+
+## Métodos de `Spatial*`
+`bbox` devuelve el __bounding box__ o coordenadas extremas.
+```{r bbox}
+bbox(spatial_points)
+```
+
+`summary` devuelve el bounding box, el número de puntos y la proyección.
+```{r summary}
+summary(spatial_points)
+```
+
+
+## Métodos de `Spatial*` (cont.)
+`proj4string` devuelve el string de proyección:
+```{r proj4string}
+proj4string(spatial_points)
+```
+
+`coordinates` devuelve las coordenadas de los puntos:
+```{r coordinates}
+coordinates(spatial_points)
+```
+
+## `SpatialPointsDataFrame`
+Las clases `*DataFrame` crean objetos espaciales con metadatos adjuntos en un
+objeto `data.frame`. 
+```{r}
+metadata <- data.frame(random_name = sample(LETTERS, 10))
+spatial_points_df <- SpatialPointsDataFrame(
+  coords = spatial_points,
+  data = metadata,
+  proj4string = example_crs
+)
+str(spatial_points_df)
+```
+
+## Métodos en `Spatial*DataFrame`
+Estas clases procuran simular un objeto `data.frame` en lo más posible. Podemos
+usar los métodos:
+
+- `merge`
+- `summary`
+- `dim`
+- `head`
+- `tail`
+- `plot`
+- `points`
+- `print`
+- `rbind`
+- `show`
+- `subset`
+- `$ (extract)`
+- `[ (extract)`
+- `[[ (extract)`
+
+## `SpatialLines`
+
+
+[cran_spatial_task]: https://cran.r-project.org/web/views/Spatial.html
+[marco_geostadistco_mexico]: http://www.inegi.org.mx/geo/contenidos/geoestadistica/m_geoestadistico.aspx
