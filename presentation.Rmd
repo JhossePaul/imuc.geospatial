@@ -9,6 +9,10 @@ output:
     widescreen: yes
 ---
 
+```{r set_options, echo = FALSE, include = FALSE}
+options(width = 100)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, size = "small")
+```
 ## Datos espaciales
 
 - Datos que representan ubicaciones, formas y tamaños de entidades en el planeta.
@@ -66,6 +70,19 @@ y procesamiento no se realiza de manera convencional debido a su estructura.
 
 Más en la siguiente [liga](cran_spatial_tasks)
 
+## Instalación
+
+```{r packages}
+# install.packages(c("sp", "raster", "sf", "rgdal", "geosphere"))
+library(sp)
+library(raster)
+library(sf)
+library(rgdal)
+library(geosphere)
+```
+## Dependencias en CRAN
+<img src="images/sp_dependencies.png" width="900px" />
+
 # Data structures
 
 ## Librerías con estructuras de datos espaciales
@@ -79,16 +96,16 @@ Más en la siguiente [liga](cran_spatial_tasks)
 - sp: clase `SpatialGrid*`
 - raster: clases `Raster*`
 
-## sp: Classes and methods for spatial data
-Todas las clases de la librería `sp` son S4, las que son de nuestr interés son:
+## `sp`: Classes and methods for spatial data
+La librería da soporte a las clases:
 
+- `CRS`
 - `SpatialPoints*`
 - `SpatialLines*`
 - `SpatialMultiPoints*`
 - `SpatialPolygons*`
 - `SpatialGrid*`
 - `SpatialPixels*`
-- `CRS`
 
 Todas estas clases están acompañadas de un constructor que permite incluir los
 metadatos en forma de un data.frame. Por ejemplo, `SpatialPointsDataFrame` recibe
@@ -99,19 +116,12 @@ como argumento adicional los metadatos para cada punto.
 - Además de especificar las coordenadas necesitamos especificar un CRS.
 
 ```{r spatial_points}
-library(sp)                                      # Cargamos la librería sp
-library(raster)                                  # Cargamos la librería raster para usar el método print
-
+example_crs <- CRS("+proj=longlat +datum=WGS84") # Creamos el sistema de coordenadas
 example_points <- data.frame(                    # Creamos un data.frame con 10 coordenadas 
   longitud = runif(10, -118, -87),               # Nota: La primera columna es la longitud
   latitud = runif(10, 15, 32)
 )
-example_crs <- CRS("+proj=longlat +datum=WGS84") # Creamos el sistema de coordenadas
-
-spatial_points <- SpatialPoints(                 # Creamos un objeto de clase SpatialPoints
-  coords = example_points,
-  proj4string = example_crs
-)
+(spatial_points <- SpatialPoints(coords = example_points, proj4string = example_crs))
 ```
 
 ## Métodos de `Spatial*`
@@ -160,7 +170,6 @@ usar los métodos:
 - `head`
 - `tail`
 - `plot`
-- `points`
 - `print`
 - `rbind`
 - `show`
@@ -169,7 +178,195 @@ usar los métodos:
 - `[ (extract)`
 - `[[ (extract)`
 
-## `SpatialLines`
+## `SpatialLines*`
+Para crear objetos de clase `SpatialLines` requerimos una lista de objetos clase
+`Lines`, que a su vez está compuesto por objetos de clase `Line`, que finalmente
+está compuesto por coordenadas que forman segmentos.
+
+```{r spatial_lines}
+# Creamos 3 objetos Line y dos objetos Lines
+line1 = Line(data.frame(runif(3, -118, -87), runif(3, 15, 32)))
+line2 = Line(data.frame(runif(3, -118, -87), runif(3, 15, 32)))
+line3 = Line(data.frame(c(-118, -87), c(15, 32)))
+lines1 <- Lines(list(line1, line2), ID = "A")
+lines2 <- Lines(list(line3), ID = "B")
+
+metadata <- data.frame(row.names = c("A", "B"), name = letters[1:2])
+spatial_lines <- SpatialLines(list(lines1, lines2), example_crs)          # Creamos un objeto SpatialLines
+(spatial_lines_dataframe <- SpatialLinesDataFrame(spatial_lines, metadata)) # Agregamos metadatos
+```
+
+## Métodos de `SpatialLines`
+```{r line_length}
+LineLength(cc = line1, longlat = TRUE, sum = FALSE) # Retorna la longitud de cada segmento de la línea
+```
+
+```{r lines_length}
+LinesLength(Ls = lines2, longlat = TRUE)    # Retorna la suma de las longitudes de las lineas
+```
+
+```{r spatial_lines_lengthsj}
+SpatialLinesLengths(SL = spatial_lines, longlat = TRUE) # Retorna la suma de las longitudes de las líneas
+```
+
+```{r spatial_lines_midpoints}
+getSpatialLinesMidPoints(spatial_lines)   # Retorna un objeto SpatialPoints con los centros de las líneas
+```
+
+## Otros métodos en `SpatialLines`
+- `[ (extract)`
+- `coordinates`
+- `plot`
+- `lines`
+- `rbind`
+- `summary`
+
+## `SpatialPolygons`
+Al igual que `SpatialLines`, `SpatialPolygons` se contruye con una lista de objetos
+clase `Polygons`, que a su vez se componen de objetos de clase `Polygon`, que son
+objetos de clase `Line` cuya coordenada final es igual a la coordenada inicial.
+
+```{r spatial_polygons}
+example_bounding_box <- data.frame(
+  longitud = c(-118, -118, -87, -87, -118),
+  latitud = c(15, 32, 32, 15, 15)
+)
+example_polygon <- Polygon(example_bounding_box)
+example_polygons <- Polygons(srl = list(example_polygon), "bounding box")
+(spatial_polygons <- SpatialPolygons(list(example_polygons), proj4string = example_crs))
+```
+
+## `GridTopology`
+Para crear un objeto de clase `SpatialGrid` necesitamos un objeto clase `GridTopology`.
+El cual requiere básicamente, un centro y el tamaño de las celdas.
+
+```{r grid_topology}
+bb <- bbox(spatial_polygons)
+cs <- c(0.5, 0.5)             # Tamaño de las celdas
+cc <- bb[, 1] + cs / 2          # Cordenadas del centroide de inferior izquierdo de la grilla
+cd <- ceiling(diff(t(bb))/cs)   # Total de celdas en cada dimensión
+(example_topology <- GridTopology(cellcentre.offset = cc, cellsize = cs, cells.dim = cd))
+``` 
+
+
+## `SpatialGrid*` y métodos en `SpatialGrid*`
+```{r spatial_grid}
+example_grid <- SpatialGrid(example_topology, example_crs)
+summary(example_grid)
+```
+
+```{r area_spatial_grid}
+areaSpatialGrid(example_grid)
+```
+Para el estudio de variables continuas se recomienda el uso de la librería `raster`.
+
+## `raster`: Geographic Data Analysis and Modeling
+La librería da soporte a las clases:
+
+- `RasterLayer`
+- `RasterBrick`
+- `RasterStack`
+
+## `RasterLayer`
+Representa una sola capa de datos. Contiene información acerca del origen de los
+datos, el número de filas y columnas en la grilla.
+
+```{r raster}
+(example_raster <- raster(
+  nrows = 180,       # Número de filas
+  ncols = 360,       # Número de columnas
+  xmn = -180,        # Coordenada x mínima
+  xmx = 180,         # Coordenada x máxima
+  ymn = -90,         # Coordenada y mínima
+  ymx = 90,          # Coordenada y máxima
+  crs = example_crs, # Sistema de coordenadas
+  vals = runif(180 * 360)
+))
+```
+
+
+## `RasterStack`
+Estas clases dan soporte cuando tenemos múltiples capas raster. La diferencia es
+que `RasterBrick` solo puede ser referenciado a un solo origen y los
+`RasterStack` a múltiples.
+
+Los archivos `RasterStack` son listas de objetos `RasterLayer` que solo pueden
+mantenerse en RAM. En cambio, los objetos `RasterBrick` están contenidos en
+un solo archivo con múltiples __bandas__.
+
+
+```{r stack}
+example_raster2 <- raster(
+  nrows = 180, ncols = 360, xmn = -180, xmx = 180, ymn = -90,
+  ymx = 90, crs = example_crs, vals = sort(rnorm(180 * 360))
+)
+(raster_stack <- stack(example_raster, example_raster2))
+```
+
+## `RasterBrick`
+```{r brick}
+(raster_brick <- brick(example_raster, example_raster2))
+```
+
+## `sf`: Simple Features for R
+Los __simple feature__ son el estándar internacional de la representación y
+manipulación de datos espaciales. La ventaja de usar las __simple features__ es
+intercompatibilidad entre lenguajes y bases de datos, además, el desempeño a mejorado
+bastante con respecto a `sp` (10x). Los tipos de datos  más importantes soportados
+por `sf` son:
+
+- `POINT`
+- `LINESTRING`
+- `POLYGON`
+- `MULTIPOINT`
+- `MULTILINESTRING`
+- `MULTIPOLYGON`
+- `GEOMETRYCOLLECTION`
+
+## Clase `sf`
+La clase `sf` representa un __single feature__. A su vez está compuesto por un 
+`data.frame` que contiene los metadatos y un objeto de clase `sfc`
+(simple feature collection), que es una lista de objetos `sfg` (simple feature geometry).
+
+```{r st_point, warning = FALSE}
+example_point <- st_point(c(0, 1))
+example_line <- st_linestring(matrix(c(0, 1, 0, 1), 2, 2))
+outer = matrix(c(0, 0, 10, 0, 10, 10, 0, 10, 0, 0), ncol = 2, byrow = TRUE)
+pts = list(outer)
+example_polygon <- st_polygon(pts)
+class(example_polygon)
+```
+
+```{r st_sfc}
+(example_sfc <- st_sfc(example_polygon, example_line))
+```
+
+## Clase `sf` (Cont.)
+
+
+```{r st_sf}
+(example_sf <- st_sf(a = 1:2, example_sfc))
+```
+
+En este curso no profundizaremos mucho más en la librería `sf` ya que se encuentra
+en desarrollo.
+
+# Geodata I/O
+
+## Introducción
+Hasta el momento solo hemos visto acerca de las estructuras de datos. Ahora
+veremos como importar datos de diferentes formatos con diferentes librerías.
+En particular nos interesan las librerías:
+
+- `sf`
+- `rgdal`
+
+```{r drivers}
+head(st_drivers(), 4)
+head(ogrDrivers(), 4)
+```
+
+
 
 
 [cran_spatial_task]: https://cran.r-project.org/web/views/Spatial.html
