@@ -1,0 +1,67 @@
+---
+title: "Análisis de datos geoespaciales"
+subtitle: "Visualización"
+author: "Jhosse Paul Márquez Ruíz"
+date: "`r format(Sys.Date(), '%d de %B del %Y')`"
+output: 
+  ioslides_presentation: 
+    smaller: yes
+    widescreen: yes
+---
+
+```{r set_options, echo = FALSE, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, size = "small")
+```
+
+## Librerías
+En esta sección ocuparemos las siguientes librerías:
+
+- `maps`: Datos de mapas
+- `ggplot2` y `ggmap`: Visualización general y extensión para soporte de mapas
+- `leaflet`: Mapas interactivos
+- `plotKML`: Exportar archivos KML con una buena manipulación del formato
+- `rasterVis`: Visualización avanzada de clases `Raster`
+
+```{r packages}
+pkgs <- c(
+  "sp", "sf", "raster", "ggplot2", "maps", "gridExtra",
+  "ggmap", "leaflet", "rasterVis", "plotKML", "maptools", "dismo"
+)
+sapply(pkgs, require, character = TRUE, warn = FALSE)
+```
+
+## Recolectando datos
+
+### Recolectando datos de bases de datos públicas
+```{r gbif, cache = TRUE}
+example_crs <- CRS("+proj=longlat +datum=WGS84")
+coord_cols <- c("lon", "lat")
+ab <- gbif(
+  genus = "Ambystoma", species = "mexicanum",
+  geo = TRUE, removeZeros = TRUE, ext = extent(c(-118, -87), c(15, 32))
+)
+ab_points <- SpatialPointsDataFrame(
+  coords = subset(ab, select = c(lon, lat)),
+  data = subset(ab, select = -c(lon, lat)),
+  proj4string = example_crs
+)
+str(ab_points, max.level = 2)
+```
+
+## Recolectando datos (cont.)
+### Mapas clase `map` y coherción a `SpatialLinesDataFrame`
+```{r mexico}
+(mexico_sl <- map2SpatialLines(map("world", "mexico", plot = FALSE), proj4string = example_crs))
+```
+
+### `contourLines` y coherción a `SpatialLinesDataFrame`
+```{r volcano}
+(volcano_sl <- ContourLines2SLDF(contourLines(volcano)))
+```
+
+## Recolectando datos (cont.)
+### Mapas clase `ggmap`
+```{r get_map, cache = TRUE}
+mexico_ggmap_toner <- get_map("mexico", zoom = 5, maptype = "toner", messaging = FALSE)
+mexico_ggmap_terrain <- get_map("mexico", zoom = 5, maptype = "terrain", messaging = FALSE)
+```

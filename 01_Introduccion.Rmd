@@ -1,0 +1,118 @@
+---
+title: "Análisis de datos geoespaciales"
+subtitle: "Introducción"
+author: "Jhosse Paul Márquez Ruíz"
+date: "`r format(Sys.Date(), '%d de %B del %Y')`"
+output: 
+  ioslides_presentation: 
+    smaller: yes
+    widescreen: yes
+---
+
+```{r set_options, echo = FALSE, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, size = "small")
+```
+## Datos espaciales
+
+- Datos que representan ubicaciones, formas y tamaños de entidades en el planeta.
+- Generalmente acompañados de atributos o metadatos.
+- Inicialmente desarrollados para sistemas de información geográfica.
+- Por ejemplo, el [marco geoestadístico de México](marco_geoestadistico_mexico)
+
+Estos objetos representan un reto para la ciencia de datos, ya que su almacenamiento
+y procesamiento no se realiza de manera convencional debido a su estructura.
+
+## Estructura de datos espaciales
+- Datos vectoriales:
+    + Puntos: Dimensión 1. Cada punto es representado por un par de codenadas (x, y).
+    + Líneas: Dimensión 2. Múltiples puntos conectados en un orden.
+    + Polígonos: Dimensión 2. Múltiples líneas conectadas. Estas líneas no se
+    intersectan y la última línea debe terminar en el inicio de la primera.
+
+- Datos raster: Representan mediciones sobre un espacio geográfico. Estas mediciones
+  son agrupadas en celdas que conforman una grilla. Cada celda debe representar
+  las mediciones en el área que abarque. El tamaño de la celda da la propiedad
+  de resolución.
+
+## Soporte en software
+- GIS:
+    + ArcGIS
+    + OpenGIS
+    + GRASS
+    + QGIS
+- Bases de datos espaciales:
+    + PostGIS
+    + SQL Server
+    + MySQL
+    + Redis
+- Lenguajes de programación:
+    + Python (shapely, geopy, ogr/gdal)
+    + C++ (GEOS, GDAL)
+    + Java (GeoTools)
+    + Scala (GeoSparkl, SpatialSpark)
+    + R
+
+## Librerías en R
+- Data structures
+    + sp
+    + sf
+    + raster
+- Manipulation
+    + rgdal
+    + rgeos
+    + maptools
+    - geosphere
+- Visualizaton
+    + ggplot2
+    + ggmap
+    + rasterVis
+    + leaflet
+    + plotkml
+
+Más en la siguiente [liga](cran_spatial_tasks)
+
+## Instalación
+
+```{r packages}
+pkgs <- c(
+  "magrittr", "Rcpp", "data.table", "sp", "raster", "sf", "rgdal", "geosphere",
+  "dismo", "maps", "maptools", "ggplot2", "ggmap", "jsonlite", "rasterVis"
+)
+# install.packages(pkgs, repos = "https://cran.itam.mx/")
+```
+
+## Fuentes de datos
+- [INEGI](marco_geoestadistico_mexico) y [CONABIO](conabio_gis)
+- [Global Administration Areas](global_admin_areas)
+- [Global Biodiversity Information Facility](gbif) y [International Union for Conservation of Nature](iucn)
+- [Open Street Map Data](open_street_map_data)
+- [Natural Earth Data](natural_earth_data)
+- [EarthExplorer - USGS](usgs)
+- [Hydrosheds - USGS](hydrosheds)
+- [Copernicus Open Access Hub](copernicus)
+- [Open Topography](opentopography)
+- [Neo - NASA](neo_nasa)
+- [IPUMS Terra](ipums_terra)
+- [Food and Agriculture Organization of the UN](fao)
+- [United Nations Environment Programee](unep)
+- [SocioEconomic Data and Applications Center](sedac)
+
+[cran_spatial_task]: https://cran.r-project.org/web/views/Spatial.html
+[marco_geostadistco_mexico]: http://www.inegi.org.mx/geo/contenidos/geoestadistica/m_geoestadistico.aspx
+[conabio_gis]: http://www.conabio.gob.mx/informacion/gis/
+[global_admin_areas]: http://www.gadm.org/
+[gbif]: http://www.gbif.org/
+[iucn]: http://www.iucnredlist.org/technical-documents/spatial-data/ 
+[open_street_map_data]: http://openstreetmapdata.com/data
+[natural_earth_data]: http://www.naturalearthdata.com/
+[usgs]: https://earthexplorer.usgs.gov/
+[copernicus]: https://scihub.copernicus.eu/dhus/#/home
+[fao]: http://www.fao.org/geonetwork/srv/en/main.home
+[opentopography]: http://www.opentopography.org/
+[unep]: http://geodata.grid.unep.ch/
+[neo_nasa]: https://neo.sci.gsfc.nasa.gov/
+[srtm]: http://srtm.csi.cgiar.org/
+[ipums_terra]: https://www.terrapop.org/
+[sedac]: http://sedac.ciesin.columbia.edu/data/sets/browse
+[hydrosheds]: https://hydrosheds.cr.usgs.gov/dataavail.php
+[waterloo]: https://uwaterloo.ca/library/geospatial/collections/us-and-world-geospatial-data-resources

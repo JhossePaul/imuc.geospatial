@@ -1,0 +1,109 @@
+---
+title: "Análisis de datos geoespaciales"
+subtitle: "Input/Output"
+author: "Jhosse Paul Márquez Ruíz"
+date: "`r format(Sys.Date(), '%d de %B del %Y')`"
+output: 
+  ioslides_presentation: 
+    smaller: yes
+    widescreen: yes
+---
+
+```{r set_options, echo = FALSE, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, size = "small")
+```
+
+## Librerías
+En esta sección ocuparemos las siguientes librerías:
+```{r packages}
+pkgs <- c("sp", "sf", "raster", "rgdal")
+sapply(pkgs, require,  character.only = TRUE)
+```
+
+## Drivers
+```{r drivers}
+head(st_drivers(), 3)
+head(ogrDrivers(), 3)
+head(gdalDrivers(), 3)
+```
+
+## Importando datos con `sf`
+### Shapefiles
+```{r st_read_shapefiles}
+example_sf_shapefile <- st_read(system.file("shape/nc.shp", package = "sf"))
+```
+
+### KML
+```{r st_read_kml}
+example_sf_kml <- st_read("http://puebla.gob.mx/datos_abiertos/pueblos_magicos.kml")
+```
+
+## Importando datos con `sf`
+### JSON
+```{r st_read_json}
+example_sf_json <- st_read("files/mexico.json")
+```
+
+### Database Connections
+```{r st_read_db}
+# st_read("PG:dbname=postgis", "meuse")
+# st_read_db(conn, table, query, geom_column)
+```
+
+## Importando datos con `rgdal`
+### Shapefiles
+```{r read_sp_shapefile}
+example_sp_shapefile <- readOGR(system.file("shape", package = "sf"),"nc")
+```
+
+### KML
+```{r read_sp_kml}
+example_sp_kml <- readOGR(
+  dsn = "files/pueblos_magicos.kml",
+  layer = "PlaceMarks"
+)
+```
+
+## Importando datos con `rgdal` (cont.)
+### JSON
+```{r read_sp_json}
+example_sp_json <- readOGR("files/mexico.json")
+```
+
+### JPG
+```{r read_sp_jpg}
+example_sp_jpg <- readGDAL(system.file("pictures/Rlogo.jpg", package = "rgdal"))
+```
+
+## Importando datos con `rgdal` (cont.)
+```{r read_sp_tif}
+example_sp_tif <- readGDAL(system.file("pictures/cea.tif",  package = "rgdal"))
+```
+
+
+## Importando datos con `raster`
+```{r read_raster_tif}
+(example_raster_tif <- raster("files/twigw/twigw.tif"))
+```
+
+```{r read_raster_grd}
+(example_raster_grd <- brick(system.file("external/rlogo.grd", package = "raster")))
+```
+
+## Escribiendo datos
+Con `sf`:
+```{r write_sf}
+# st_write(single_feature, "file.json")
+# st_write(single_feature, "file.kml", delete_layer = TRUE)
+# st_write(single_feature, "file.shp", delete_dns = TRUE)
+# st_write_db(single_feature, update = TRUE)
+```
+
+Con `rgdal`:
+```{r writeOGR}
+# writeOGR(spatial_object, "file.shp", driver = "ESRI Shapefile")
+# writeOGR(spatial_object, "file.kml", driver = "KML")
+# writeOGR(spatial_object, "file.dxf", driver = "AUTOCAD DFX")
+# writeOGR(spatial_object, "file.json", driver = "GeoJSON")
+```
+
