@@ -2,12 +2,32 @@
 title: "Análisis geoespacial"
 subtitle: "IMUC - Escuela de ciencia de datos"
 author: "Jhosse Paul Márquez Ruíz"
-date: "8 de julio de 2017"
+date: "`r Sys.Date()`"
 output: 
   ioslides_presentation: 
     smaller: yes
     widescreen: yes
 ---
+
+[cran_spatial_task]: https://cran.r-project.org/web/views/Spatial.html
+[marco_geostadistco_mexico]: http://www.inegi.org.mx/geo/contenidos/geoestadistica/m_geoestadistico.aspx
+[conabio_gis]: http://www.conabio.gob.mx/informacion/gis/
+[global_admin_areas]: http://www.gadm.org/
+[gbif]: http://www.gbif.org/
+[iucn]: http://www.iucnredlist.org/technical-documents/spatial-data/ 
+[open_street_map_data]: http://openstreetmapdata.com/data
+[natural_earth_data]: http://www.naturalearthdata.com/
+[usgs]: https://earthexplorer.usgs.gov/
+[copernicus]: https://scihub.copernicus.eu/dhus/#/home
+[fao]: http://www.fao.org/geonetwork/srv/en/main.home
+[opentopography]: http://www.opentopography.org/
+[unep]: http://geodata.grid.unep.ch/
+[neo_nasa]: https://neo.sci.gsfc.nasa.gov/
+[srtm]: http://srtm.csi.cgiar.org/
+[ipums_terra]: https://www.terrapop.org/
+[sedac]: http://sedac.ciesin.columbia.edu/data/sets/browse
+[hydrosheds]: https://hydrosheds.cr.usgs.gov/dataavail.php
+[waterloo]: https://uwaterloo.ca/library/geospatial/collections/us-and-world-geospatial-data-resources
 
 ```{r set_options, echo = FALSE, include = FALSE}
 options(width = 100)
@@ -64,22 +84,24 @@ y procesamiento no se realiza de manera convencional debido a su estructura.
     + maptools
     - geosphere
 - Visualizaton
-    + plotkml
     + ggplot2
     + ggmap
+    + leaflet
+    + plotkml
 
 Más en la siguiente [liga](cran_spatial_tasks)
 
 ## Instalación
 
 ```{r packages}
-# install.packages(c("sp", "raster", "sf", "rgdal", "geosphere"))
-library(sp)
-library(raster)
-library(sf)
-library(rgdal)
-library(geosphere)
+pkgs <- c(
+  "magrittr", "Rcpp", "data.table", "sp", "raster", "sf", "rgdal", "geosphere",
+  "dismo", "maps", "maptools", "ggplot2", "ggmap", "jsonlite"
+)
+# install.packages(pkgs, repos = "https://cran.itam.mx/")
+sapply(pkgs, require, character.only = TRUE)
 ```
+
 ## Dependencias en CRAN
 <img src="images/sp_dependencies.png" width="900px" />
 
@@ -303,7 +325,7 @@ example_raster2 <- raster(
 (raster_stack <- stack(example_raster, example_raster2))
 ```
 
-## `RasterBrick`
+## `RasterBrick` y `rasterize`
 ```{r brick}
 (raster_brick <- brick(example_raster, example_raster2))
 ```
@@ -353,21 +375,146 @@ en desarrollo.
 
 # Geodata I/O
 
-## Introducción
-Hasta el momento solo hemos visto acerca de las estructuras de datos. Ahora
-veremos como importar datos de diferentes formatos con diferentes librerías.
-En particular nos interesan las librerías:
-
-- `sf`
-- `rgdal`
+## Librerías
+En esta sección ocuparemos las siguientes librerías: `sf` y `rgdal`.
 
 ```{r drivers}
-head(st_drivers(), 4)
-head(ogrDrivers(), 4)
+head(st_drivers(), 3)
+head(ogrDrivers(), 3)
+head(gdalDrivers(), 3)
+```
+
+## Recolectando datos
+
+### Recolectando datos de bases de datos públicas
+```{r gbif, cache = TRUE}
+coord_cols <- c("lon", "lat")
+ab <- gbif(
+  genus = "Ambystoma", species = "mexicanum",
+  geo = TRUE, removeZeros = TRUE, ext = extent(c(-118, -87), c(15, 32))
+)
+ab_dt <- data.table(ab)
+ab_points <- SpatialPointsDataFrame(
+  coords = ab_dt[, coord_cols, with = FALSE],
+  data = ab_dt[, -coord_cols, with = FALSE],
+  proj4string = CRS("+proj=longlat +datum=WGS84")
+)
+ab_points
+```
+
+## Recolectando datos (cont.)
+### Datos a partir de la librería `maps`
+```{r mexico}
+mexico_map <- map("world", "mexico", plot = FALSE)
+(mexico_sl <- map2SpatialLines(mexico_map, proj4string = example_crs))
+```
+
+### Líneas a partir de líneas de contorno
+```{r volcano}
+(volcano_sl <- ContourLines2SLDF(contourLines(volcano)))
+```
+
+## Recolectando datos (cont.)
+### Otras fuentes de información
+- [INEGI](marco_geoestadistico_mexico) y [CONABIO](conabio_gis)
+- [Global Administration Areas](global_admin_areas)
+- [Global Biodiversity Information Facility](gbif) y [International Union for Conservation of Nature](iucn)
+- [Open Street Map Data](open_street_map_data)
+- [Natural Earth Data](natural_earth_data)
+- [EarthExplorer - USGS](usgs)
+- [Hydrosheds - USGS](hydrosheds)
+- [Copernicus Open Access Hub](copernicus)
+- [Open Topography](opentopography)
+- [Neo - NASA](neo_nasa)
+- [IPUMS Terra](ipums_terra)
+- [Food and Agriculture Organization of the UN](fao)
+- [United Nations Environment Programee](unep)
+- [SocioEconomic Data and Applications Center](sedac)
+
+## Importando datos con `sf`
+### Shapefiles
+```{r st_read_shapefiles}
+example_sf_shapefile <- st_read(system.file("shape/nc.shp", package = "sf"))
+```
+
+### KML
+```{r st_read_kml}
+example_sf_kml <- st_read("http://puebla.gob.mx/datos_abiertos/pueblos_magicos.kml")
+```
+
+## Importando datos con `sf`
+### JSON
+```{r st_read_json}
+example_sf_json <- st_read("files/mexico.json")
+```
+
+### Database Connections
+```{r st_read_db}
+# st_read("PG:dbname=postgis", "meuse")
+# st_read_db(conn, table, query, geom_column)
+```
+
+## Importando datos con `rgdal`
+### Shapefiles
+```{r read_sp_shapefile}
+example_sp_shapefile <- readOGR(system.file("shape", package = "sf"),"nc")
+```
+
+### KML
+```{r read_sp_kml}
+example_sp_kml <- readOGR(
+  dsn = "files/pueblos_magicos.kml",
+  layer = "PlaceMarks"
+)
+```
+
+## Importando datos con `rgdal` (cont.)
+### JSON
+```{r read_sp_json}
+example_sp_json <- readOGR("files/mexico.json")
+```
+
+### JPG
+```{r read_sp_jpg}
+example_sp_jpg <- readGDAL(system.file("pictures/Rlogo.jpg", package = "rgdal"))
+```
+
+## Importando datos con `rgdal` (cont.)
+```{r read_sp_tif}
+example_sp_tif <- readGDAL(system.file("pictures/cea.tif",  package = "rgdal"))
 ```
 
 
+```
+```
+
+## Importando archivos rasterIntroducción
 
 
-[cran_spatial_task]: https://cran.r-project.org/web/views/Spatial.html
-[marco_geostadistco_mexico]: http://www.inegi.org.mx/geo/contenidos/geoestadistica/m_geoestadistico.aspx
+## Escribiendo datos
+Con `sf`:
+```{r write_sf}
+# st_write(single_feature, "file.json")
+# st_write(single_feature, "file.kml", delete_layer = TRUE)
+# st_write(single_feature, "file.shp", delete_dns = TRUE)
+# st_write_db(single_feature, update = TRUE)
+```
+
+Con `rgdal`:
+```{r writeOGR}
+# writeOGR(spatial_object, "file.json", driver = "GeoJSON")
+# writeOGR(spatial_object, "file.shp", driver = "ESRI Shapefile")
+# writeOGR(spatial_object, "file.kml", driver = "KML")
+# writeOGR(spatial_object, "file.dxf", driver = "AUTOCAD DFX")
+```
+
+# Manipulación y visualización de datos espaciales
+
+## Librerías
+En esta sección ocuparemos las siguientes librerías:
+
+- `ggplot2`: Librería de graficación general
+- `ggmap`: Extensión de ggplot2 para datos espaciales
+- `leaflet`: Mapas interactivos
+- `plotKML`: Exportar archivos KML con una buena manipulación del formato
+

@@ -10,6 +10,7 @@
 
 
 
+  <meta name="date" content="2017-08-11" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -94,7 +95,7 @@
       <h1 data-config-title><!-- populated from slide_config.json --></h1>
       <h2 data-config-subtitle><!-- populated from slide_config.json --></h2>
       <p data-config-presenter><!-- populated from slide_config.json --></p>
-            <p style="margin-top: 6px; margin-left: -2px;">8 de julio de 2017</p>
+            <p style="margin-top: 6px; margin-left: -2px;">2017-08-11</p>
           </hgroup>
   </slide>
 
@@ -173,9 +174,10 @@
 <li>Visualizaton
 
 <ul>
-<li>plotkml</li>
 <li>ggplot2</li>
 <li>ggmap</li>
+<li>leaflet</li>
+<li>plotkml</li>
 </ul></li>
 </ul>
 
@@ -183,12 +185,17 @@
 
 </article></slide><slide class=''><hgroup><h2>Instalación</h2></hgroup><article  id="instalacion" class="smaller ">
 
-<pre class = 'prettyprint lang-r'># install.packages(c(&quot;sp&quot;, &quot;raster&quot;, &quot;sf&quot;, &quot;rgdal&quot;, &quot;geosphere&quot;))
-library(sp)
-library(raster)
-library(sf)
-library(rgdal)
-library(geosphere)</pre>
+<pre class = 'prettyprint lang-r'>pkgs &lt;- c(
+  &quot;magrittr&quot;, &quot;Rcpp&quot;, &quot;data.table&quot;, &quot;sp&quot;, &quot;raster&quot;, &quot;sf&quot;, &quot;rgdal&quot;, &quot;geosphere&quot;,
+  &quot;dismo&quot;, &quot;maps&quot;, &quot;maptools&quot;, &quot;ggplot2&quot;, &quot;ggmap&quot;, &quot;jsonlite&quot;
+)
+# install.packages(pkgs, repos = &quot;https://cran.itam.mx/&quot;)
+sapply(pkgs, require, character.only = TRUE)</pre>
+
+<pre >##   magrittr       Rcpp data.table         sp     raster         sf      rgdal  geosphere      dismo 
+##       TRUE       TRUE       TRUE       TRUE       TRUE       TRUE       TRUE       TRUE       TRUE 
+##       maps   maptools    ggplot2      ggmap   jsonlite 
+##       TRUE       TRUE       TRUE       TRUE       TRUE</pre>
 
 </article></slide><slide class=''><hgroup><h2>Dependencias en CRAN</h2></hgroup><article  id="dependencias-en-cran" class="smaller ">
 
@@ -244,7 +251,7 @@ example_points &lt;- data.frame(                    # Creamos un data.frame con 
 
 <pre >## class       : SpatialPoints 
 ## features    : 10 
-## extent      : -114.4949, -88.10921, 20.53304, 31.88846  (xmin, xmax, ymin, ymax)
+## extent      : -110.8334, -89.48548, 19.38391, 30.2827  (xmin, xmax, ymin, ymax)
 ## coord. ref. : +proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0</pre>
 
 </article></slide><slide class=''><hgroup><h2>Métodos de <code>Spatial*</code></h2></hgroup><article  id="metodos-de-spatial" class="smaller ">
@@ -254,8 +261,8 @@ example_points &lt;- data.frame(                    # Creamos un data.frame con 
 <pre class = 'prettyprint lang-r'>bbox(spatial_points)</pre>
 
 <pre >##                 min       max
-## longitud -114.49493 -88.10921
-## latitud    20.53304  31.88846</pre>
+## longitud -110.83341 -89.48548
+## latitud    19.38391  30.28270</pre>
 
 <p><code>summary</code> devuelve el bounding box, el número de puntos y la proyección.</p>
 
@@ -264,8 +271,8 @@ example_points &lt;- data.frame(                    # Creamos un data.frame con 
 <pre >## Object of class SpatialPoints
 ## Coordinates:
 ##                 min       max
-## longitud -114.49493 -88.10921
-## latitud    20.53304  31.88846
+## longitud -110.83341 -89.48548
+## latitud    19.38391  30.28270
 ## Is projected: FALSE 
 ## proj4string :
 ## [+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0]
@@ -284,16 +291,16 @@ example_points &lt;- data.frame(                    # Creamos un data.frame con 
 <pre class = 'prettyprint lang-r'>coordinates(spatial_points)</pre>
 
 <pre >##         longitud  latitud
-##  [1,]  -91.07266 31.88846
-##  [2,]  -96.65886 25.70714
-##  [3,] -114.49493 31.53689
-##  [4,]  -88.41884 22.63126
-##  [5,] -104.31262 20.53304
-##  [6,]  -97.02950 23.16058
-##  [7,]  -89.18673 27.48997
-##  [8,] -114.02680 27.42193
-##  [9,] -103.76665 31.85502
-## [10,]  -88.10921 28.90217</pre>
+##  [1,]  -90.61517 30.28270
+##  [2,] -103.16205 23.45151
+##  [3,] -110.05192 19.38391
+##  [4,] -110.83341 22.83787
+##  [5,]  -89.48548 22.02785
+##  [6,] -102.92660 29.91612
+##  [7,] -102.68402 24.73128
+##  [8,]  -92.19951 21.12911
+##  [9,] -109.83462 24.14086
+## [10,]  -97.81363 23.52496</pre>
 
 </article></slide><slide class=''><hgroup><h2><code>SpatialPointsDataFrame</code></h2></hgroup><article  id="spatialpointsdataframe" class="smaller ">
 
@@ -309,13 +316,13 @@ str(spatial_points_df)</pre>
 
 <pre >## Formal class &#39;SpatialPointsDataFrame&#39; [package &quot;sp&quot;] with 5 slots
 ##   ..@ data       :&#39;data.frame&#39;:  10 obs. of  1 variable:
-##   .. ..$ random_name: Factor w/ 10 levels &quot;D&quot;,&quot;F&quot;,&quot;J&quot;,&quot;M&quot;,..: 4 6 7 9 3 10 2 8 1 5
+##   .. ..$ random_name: Factor w/ 10 levels &quot;D&quot;,&quot;F&quot;,&quot;J&quot;,&quot;K&quot;,..: 3 6 5 9 7 4 2 10 1 8
 ##   ..@ coords.nrs : num(0) 
-##   ..@ coords     : num [1:10, 1:2] -91.1 -96.7 -114.5 -88.4 -104.3 ...
+##   ..@ coords     : num [1:10, 1:2] -90.6 -103.2 -110.1 -110.8 -89.5 ...
 ##   .. ..- attr(*, &quot;dimnames&quot;)=List of 2
 ##   .. .. ..$ : NULL
 ##   .. .. ..$ : chr [1:2] &quot;longitud&quot; &quot;latitud&quot;
-##   ..@ bbox       : num [1:2, 1:2] -114.5 20.5 -88.1 31.9
+##   ..@ bbox       : num [1:2, 1:2] -110.8 19.4 -89.5 30.3
 ##   .. ..- attr(*, &quot;dimnames&quot;)=List of 2
 ##   .. .. ..$ : chr [1:2] &quot;longitud&quot; &quot;latitud&quot;
 ##   .. .. ..$ : chr [1:2] &quot;min&quot; &quot;max&quot;
@@ -370,7 +377,7 @@ spatial_lines &lt;- SpatialLines(list(lines1, lines2), example_crs)          # C
 
 <pre class = 'prettyprint lang-r'>LineLength(cc = line1, longlat = TRUE, sum = FALSE) # Retorna la longitud de cada segmento de la línea</pre>
 
-<pre >## [1] 2290.4562  686.4647</pre>
+<pre >## [1] 2100.203 1455.522</pre>
 
 <pre class = 'prettyprint lang-r'>LinesLength(Ls = lines2, longlat = TRUE)    # Retorna la suma de las longitudes de las lineas</pre>
 
@@ -378,13 +385,13 @@ spatial_lines &lt;- SpatialLines(list(lines1, lines2), example_crs)          # C
 
 <pre class = 'prettyprint lang-r'>SpatialLinesLengths(SL = spatial_lines, longlat = TRUE) # Retorna la suma de las longitudes de las líneas</pre>
 
-<pre >## [1] 4671.132 3662.645</pre>
+<pre >## [1] 6374.261 3662.645</pre>
 
 <pre class = 'prettyprint lang-r'>getSpatialLinesMidPoints(spatial_lines)   # Retorna un objeto SpatialPoints con los centros de las líneas</pre>
 
 <pre >## class       : SpatialPoints 
 ## features    : 2 
-## extent      : -102.5, -100.1735, 23.5, 26.2172  (xmin, xmax, ymin, ymax)
+## extent      : -102.5, -99.93291, 22.51271, 23.5  (xmin, xmax, ymin, ymax)
 ## coord. ref. : +proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0</pre>
 
 </article></slide><slide class=''><hgroup><h2>Otros métodos en <code>SpatialLines</code></h2></hgroup><article  id="otros-metodos-en-spatiallines" class="smaller ">
@@ -486,7 +493,7 @@ summary(example_grid)</pre>
 ## coord. ref. : +proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0 
 ## data source : in memory
 ## names       : layer 
-## values      : 2.894551e-06, 0.9999647  (min, max)</pre>
+## values      : 1.116493e-05, 0.9999876  (min, max)</pre>
 
 </article></slide><slide class=''><hgroup><h2><code>RasterStack</code></h2></hgroup><article  id="rasterstack" class="smaller ">
 
@@ -506,10 +513,10 @@ summary(example_grid)</pre>
 ## extent      : -180, 180, -90, 90  (xmin, xmax, ymin, ymax)
 ## coord. ref. : +proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0 
 ## names       :       layer.1,       layer.2 
-## min values  :  2.894551e-06, -4.077314e+00 
-## max values  :     0.9999647,     3.9619416</pre>
+## min values  :  1.116493e-05, -4.070922e+00 
+## max values  :     0.9999876,     4.1950850</pre>
 
-</article></slide><slide class=''><hgroup><h2><code>RasterBrick</code></h2></hgroup><article  id="rasterbrick" class="smaller ">
+</article></slide><slide class=''><hgroup><h2><code>RasterBrick</code> y <code>rasterize</code></h2></hgroup><article  id="rasterbrick-y-rasterize" class="smaller ">
 
 <pre class = 'prettyprint lang-r'>(raster_brick &lt;- brick(example_raster, example_raster2))</pre>
 
@@ -520,8 +527,8 @@ summary(example_grid)</pre>
 ## coord. ref. : +proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0 
 ## data source : in memory
 ## names       :       layer.1,       layer.2 
-## min values  :  2.894551e-06, -4.077314e+00 
-## max values  :     0.9999647,     3.9619416</pre>
+## min values  :  1.116493e-05, -4.070922e+00 
+## max values  :     0.9999876,     4.1950850</pre>
 
 </article></slide><slide class=''><hgroup><h2><code>sf</code>: Simple Features for R</h2></hgroup><article  id="sf-simple-features-for-r" class="smaller ">
 
@@ -577,30 +584,212 @@ class(example_polygon)</pre>
 
 </article></slide><slide class='segue dark nobackground level1'><hgroup class = 'auto-fadein'><h2>Geodata I/O</h2></hgroup><article  id="geodata-io" class="smaller ">
 
-</article></slide><slide class=''><hgroup><h2>Introducción</h2></hgroup><article  id="introduccion" class="smaller ">
+</article></slide><slide class=''><hgroup><h2>Librerías</h2></hgroup><article  id="librerias" class="smaller ">
 
-<p>Hasta el momento solo hemos visto acerca de las estructuras de datos. Ahora veremos como importar datos de diferentes formatos con diferentes librerías. En particular nos interesan las librerías:</p>
+<p>En esta sección ocuparemos las siguientes librerías: <code>sf</code> y <code>rgdal</code>.</p>
+
+<pre class = 'prettyprint lang-r'>head(st_drivers(), 3)</pre>
+
+<pre >##          name                  long_name write  copy is_raster is_vector
+## PCIDSK PCIDSK       PCIDSK Database File  TRUE FALSE      TRUE      TRUE
+## netCDF netCDF Network Common Data Format  TRUE  TRUE      TRUE      TRUE
+## PDF       PDF             Geospatial PDF  TRUE  TRUE      TRUE      TRUE</pre>
+
+<pre class = 'prettyprint lang-r'>head(ogrDrivers(), 3)</pre>
+
+<pre >##         name                long_name write  copy isVector
+## 1 AeronavFAA              Aeronav FAA FALSE FALSE     TRUE
+## 2     ARCGEN        Arc/Info Generate FALSE FALSE     TRUE
+## 3     AVCBin Arc/Info Binary Coverage FALSE FALSE     TRUE</pre>
+
+<pre class = 'prettyprint lang-r'>head(gdalDrivers(), 3)</pre>
+
+<pre >##      name                     long_name create  copy isRaster
+## 1 AAIGrid           Arc/Info ASCII Grid  FALSE  TRUE     TRUE
+## 2    ACE2                          ACE2  FALSE FALSE     TRUE
+## 3    ADRG ARC Digitized Raster Graphics   TRUE FALSE     TRUE</pre>
+
+</article></slide><slide class=''><hgroup><h2>Recolectando datos</h2></hgroup><article  id="recolectando-datos" class="smaller ">
+
+<h3>Recolectando datos de bases de datos públicas</h3>
+
+<pre class = 'prettyprint lang-r'>coord_cols &lt;- c(&quot;lon&quot;, &quot;lat&quot;)
+ab &lt;- gbif(
+  genus = &quot;Ambystoma&quot;, species = &quot;mexicanum&quot;,
+  geo = TRUE, removeZeros = TRUE, ext = extent(c(-118, -87), c(15, 32))
+)
+ab_dt &lt;- data.table(ab)
+ab_points &lt;- SpatialPointsDataFrame(
+  coords = ab_dt[, coord_cols, with = FALSE],
+  data = ab_dt[, -coord_cols, with = FALSE],
+  proj4string = CRS(&quot;+proj=longlat +datum=WGS84&quot;)
+)
+ab_points</pre>
+
+<pre >## class       : SpatialPointsDataFrame 
+## features    : 156 
+## extent      : -101.7333, -98.44167, 19.16194, 24.36667  (xmin, xmax, ymin, ymax)
+## coord. ref. : +proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0 
+## variables   : 116
+## names       :   acceptedNameUsage,                            accessRights,             adm1,       adm2,                                                                                                                                                                                                                                                                                                                              associatedReferences,     basisOfRecord,                                                                                                                                                                                                                                                                                    bibliographicCitation,                      catalogNumber,    class, classKey,                                                                                         cloc, collectionCode,                  collectionID,     continent, coordinateUncertaintyInMeters, ... 
+## min values  : Ambystoma mexicanum, http://vertnet.org/resources/norms.html, Distrito federal,     CHALCO, Shaw, G. 1789. Gyrinus mexicanus. Nat. Misc. 9:PagCons: 343-344 PagPubl: ND Fuente: 2. Londres, Inglaterra. | Tihen, J. A. 1958. Comments on the osteology and phylogeny of Ambystomatid salamanders. Bull.  Florida St.  Mus.  Biol. Sci. 3(1):PagCons: 1-50 PagPubl: 324 Fuente: 3. University of Florida Gainesville. Florida, Estados Unidos., HUMAN_OBSERVATION, Aguilar Miguel, X. y G. Casas Andreu. 2002. Algunas especies de anfibios y reptiles contenidos en el Proyecto de Norma Oficial Mexicana PROY-NOM-059-ECOL-2000Universidad Autónoma del Estado de México. Facultad de Ciencias. Bases de datos SNIB-CONABIO proyectos No. W035, U012 y H103. México, D.F.,                               1001, Amphibia,      131, 100 m al S del centro de Mixquic (5.5 mi al SW de Chalco), Distrito federal, TLAHUAC, Mexico,           AMNH,                          1714, NORTH_AMERICA,                         30571, ... 
+## max values  : Ambystoma mexicanum,                            Libre acceso,           Puebla, XOCHIMILCO, Shaw, G. 1789. Gyrinus mexicanus. Nat. Misc. 9:PagCons: 343-344 PagPubl: ND Fuente: 2. Londres, Inglaterra. | Tihen, J. A. 1958. Comments on the osteology and phylogeny of Ambystomatid salamanders. Bull.  Florida St.  Mus.  Biol. Sci. 3(1):PagCons: 1-50 PagPubl: 324 Fuente: 3. University of Florida Gainesville. Florida, Estados Unidos.,           UNKNOWN,                                                      Reynoso Rosales, V. H. 2007. Actualización de la base de datos de la colección nacional de anfibios y reptiles (CNAR). Universidad Nacional Autónoma de México. Instituto de Biología. Bases de datos SNIB-CONABIO proyecto No. CE006. México, D.F., SMNS-Herp-0011436 / 468577 / 24218, Amphibia,      131,                                          Xochimilco, Federal District, Mexico, NORTH_AMERICA,           USNM, urn:lsid:biocol.org:col:34841, NORTH_AMERICA,                       1773517, ...</pre>
+
+</article></slide><slide class=''><hgroup><h2>Recolectando datos (cont.)</h2></hgroup><article  id="recolectando-datos-cont." class="smaller ">
+
+<h3>Datos a partir de la librería <code>maps</code></h3>
+
+<pre class = 'prettyprint lang-r'>mexico_map &lt;- map(&quot;world&quot;, &quot;mexico&quot;, plot = FALSE)
+(mexico_sl &lt;- map2SpatialLines(mexico_map, proj4string = example_crs))</pre>
+
+<pre >## class       : SpatialLines 
+## features    : 20 
+## extent      : -118.4014, -86.69629, 14.54541, 32.71533  (xmin, xmax, ymin, ymax)
+## coord. ref. : +proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0</pre>
+
+<h3>Líneas a partir de líneas de contorno</h3>
+
+<pre class = 'prettyprint lang-r'>(volcano_sl &lt;- ContourLines2SLDF(contourLines(volcano)))</pre>
+
+<pre >## class       : SpatialLinesDataFrame 
+## features    : 10 
+## extent      : 0, 1, 0, 1  (xmin, xmax, ymin, ymax)
+## coord. ref. : NA 
+## variables   : 1
+## names       : level 
+## min values  :   100 
+## max values  :   190</pre>
+
+</article></slide><slide class=''><hgroup><h2>Recolectando datos (cont.)</h2></hgroup><article  id="recolectando-datos-cont.-1" class="smaller ">
+
+<h3>Otras fuentes de información</h3>
 
 <ul>
-<li><code>sf</code></li>
-<li><code>rgdal</code></li>
+<li><a href='marco_geoestadistico_mexico' title=''>INEGI</a> y <a href='conabio_gis' title=''>CONABIO</a></li>
+<li><a href='global_admin_areas' title=''>Global Administration Areas</a></li>
+<li><a href='gbif' title=''>Global Biodiversity Information Facility</a> y <a href='iucn' title=''>International Union for Conservation of Nature</a></li>
+<li><a href='open_street_map_data' title=''>Open Street Map Data</a></li>
+<li><a href='natural_earth_data' title=''>Natural Earth Data</a></li>
+<li><a href='usgs' title=''>EarthExplorer - USGS</a></li>
+<li><a href='hydrosheds' title=''>Hydrosheds - USGS</a></li>
+<li><a href='copernicus' title=''>Copernicus Open Access Hub</a></li>
+<li><a href='opentopography' title=''>Open Topography</a></li>
+<li><a href='neo_nasa' title=''>Neo - NASA</a></li>
+<li><a href='ipums_terra' title=''>IPUMS Terra</a></li>
+<li><a href='fao' title=''>Food and Agriculture Organization of the UN</a></li>
+<li><a href='unep' title=''>United Nations Environment Programee</a></li>
+<li><a href='sedac' title=''>SocioEconomic Data and Applications Center</a></li>
 </ul>
 
-<pre class = 'prettyprint lang-r'>head(st_drivers(), 4)</pre>
+</article></slide><slide class=''><hgroup><h2>Importando datos con <code>sf</code></h2></hgroup><article  id="importando-datos-con-sf" class="smaller ">
 
-<pre >##                          name            long_name write  copy is_raster is_vector
-## PCIDSK                 PCIDSK PCIDSK Database File  TRUE FALSE      TRUE      TRUE
-## PDF                       PDF       Geospatial PDF  TRUE  TRUE      TRUE      TRUE
-## ESRI Shapefile ESRI Shapefile       ESRI Shapefile  TRUE FALSE     FALSE      TRUE
-## MapInfo File     MapInfo File         MapInfo File  TRUE FALSE     FALSE      TRUE</pre>
+<h3>Shapefiles</h3>
 
-<pre class = 'prettyprint lang-r'>head(ogrDrivers(), 4)</pre>
+<pre class = 'prettyprint lang-r'>example_sf_shapefile &lt;- st_read(system.file(&quot;shape/nc.shp&quot;, package = &quot;sf&quot;))</pre>
 
-<pre >##         name                     long_name write  copy isVector
-## 1 AeronavFAA                   Aeronav FAA FALSE FALSE     TRUE
-## 2     ARCGEN             Arc/Info Generate FALSE FALSE     TRUE
-## 3     AVCBin      Arc/Info Binary Coverage FALSE FALSE     TRUE
-## 4     AVCE00 Arc/Info E00 (ASCII) Coverage FALSE FALSE     TRUE</pre></article></slide>
+<pre >## Reading layer `nc&#39; from data source `C:\Users\MarquezP\Documents\R\win-library\3.3\sf\shape\nc.shp&#39; using driver `ESRI Shapefile&#39;
+## Simple feature collection with 100 features and 14 fields
+## geometry type:  MULTIPOLYGON
+## dimension:      XY
+## bbox:           xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965
+## epsg (SRID):    4267
+## proj4string:    +proj=longlat +datum=NAD27 +no_defs</pre>
+
+<h3>KML</h3>
+
+<pre class = 'prettyprint lang-r'>example_sf_kml &lt;- st_read(&quot;http://puebla.gob.mx/datos_abiertos/pueblos_magicos.kml&quot;)</pre>
+
+<pre >## Reading layer `PlaceMarks&#39; from data source `http://puebla.gob.mx/datos_abiertos/pueblos_magicos.kml&#39; using driver `KML&#39;
+## Simple feature collection with 8 features and 2 fields
+## geometry type:  POINT
+## dimension:      XY
+## bbox:           xmin: -98.3141 ymin: 19.03194 xmax: -97.49676 ymax: 20.27866
+## epsg (SRID):    4326
+## proj4string:    +proj=longlat +datum=WGS84 +no_defs</pre>
+
+</article></slide><slide class=''><hgroup><h2>Importando datos con <code>sf</code></h2></hgroup><article  id="importando-datos-con-sf-1" class="smaller ">
+
+<h3>JSON</h3>
+
+<pre class = 'prettyprint lang-r'>example_sf_json &lt;- st_read(&quot;files/mexico.json&quot;)</pre>
+
+<pre >## Reading layer `mexico&#39; from data source `C:\Users\MarquezP\Repositorios\kantar\imuc.geospatial_analysis\files\mexico.json&#39; using driver `GeoJSON&#39;
+## Simple feature collection with 33 features and 59 fields
+## geometry type:  MULTIPOLYGON
+## dimension:      XY
+## bbox:           xmin: -118.3568 ymin: 14.54628 xmax: -86.74157 ymax: 32.71284
+## epsg (SRID):    4326
+## proj4string:    +proj=longlat +datum=WGS84 +no_defs</pre>
+
+<h3>Database Connections</h3>
+
+<pre class = 'prettyprint lang-r'># st_read(&quot;PG:dbname=postgis&quot;, &quot;meuse&quot;)
+# st_read_db(conn, table, query, geom_column)</pre>
+
+</article></slide><slide class=''><hgroup><h2>Importando datos con <code>rgdal</code></h2></hgroup><article  id="importando-datos-con-rgdal" class="smaller ">
+
+<h3>Shapefiles</h3>
+
+<pre class = 'prettyprint lang-r'>example_sp_shapefile &lt;- readOGR(system.file(&quot;shape&quot;, package = &quot;sf&quot;),&quot;nc&quot;)</pre>
+
+<pre >## OGR data source with driver: ESRI Shapefile 
+## Source: &quot;C:/Users/MarquezP/Documents/R/win-library/3.3/sf/shape&quot;, layer: &quot;nc&quot;
+## with 100 features
+## It has 14 fields</pre>
+
+<h3>KML</h3>
+
+<pre class = 'prettyprint lang-r'>example_sp_kml &lt;- readOGR(
+  dsn = &quot;files/pueblos_magicos.kml&quot;,
+  layer = &quot;PlaceMarks&quot;
+)</pre>
+
+<pre >## OGR data source with driver: KML 
+## Source: &quot;files/pueblos_magicos.kml&quot;, layer: &quot;PlaceMarks&quot;
+## with 8 features
+## It has 2 fields</pre>
+
+</article></slide><slide class=''><hgroup><h2>Importando datos con <code>rgdal</code> (cont.)</h2></hgroup><article  id="importando-datos-con-rgdal-cont." class="smaller ">
+
+<h3>JSON</h3>
+
+<pre class = 'prettyprint lang-r'>example_sp_json &lt;- readOGR(&quot;files/mexico.json&quot;)</pre>
+
+<pre >## OGR data source with driver: GeoJSON 
+## Source: &quot;files/mexico.json&quot;, layer: &quot;OGRGeoJSON&quot;
+## with 33 features
+## It has 59 fields</pre>
+
+</article></slide><slide class=''><hgroup><h2>Importando archivos rasterIntroducción</h2></hgroup><article  id="importando-archivos-rasterintroduccion" class="smaller ">
+
+</article></slide><slide class=''><hgroup><h2>Escribiendo datos</h2></hgroup><article  id="escribiendo-datos" class="smaller ">
+
+<p>Con <code>sf</code>:</p>
+
+<pre class = 'prettyprint lang-r'># st_write(single_feature, &quot;file.json&quot;)
+# st_write(single_feature, &quot;file.kml&quot;, delete_layer = TRUE)
+# st_write(single_feature, &quot;file.shp&quot;, delete_dns = TRUE)
+# st_write_db(single_feature, update = TRUE)</pre>
+
+<p>Con <code>rgdal</code>:</p>
+
+<pre class = 'prettyprint lang-r'># writeOGR(spatial_object, &quot;file.json&quot;, driver = &quot;GeoJSON&quot;)
+# writeOGR(spatial_object, &quot;file.shp&quot;, driver = &quot;ESRI Shapefile&quot;)
+# writeOGR(spatial_object, &quot;file.kml&quot;, driver = &quot;KML&quot;)
+# writeOGR(spatial_object, &quot;file.dxf&quot;, driver = &quot;AUTOCAD DFX&quot;)</pre>
+
+</article></slide><slide class='segue dark nobackground level1'><hgroup class = 'auto-fadein'><h2>Manipulación y visualización de datos espaciales</h2></hgroup><article  id="manipulacion-y-visualizacion-de-datos-espaciales" class="smaller ">
+
+</article></slide><slide class=''><hgroup><h2>Librerías</h2></hgroup><article  id="librerias-1" class="smaller ">
+
+<p>En esta sección ocuparemos las siguientes librerías:</p>
+
+<ul>
+<li><code>ggplot2</code>: Librería de graficación general</li>
+<li><code>ggmap</code>: Extensión de ggplot2 para datos espaciales</li>
+<li><code>leaflet</code>: Mapas interactivos</li>
+<li><code>plotKML</code>: Exportar archivos KML con una buena manipulación del formato</li>
+</ul></article></slide>
 
 
   <slide class="backdrop"></slide>
