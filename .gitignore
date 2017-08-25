@@ -23,7 +23,8 @@ vignettes/*.pdf
 *.utf8.md
 *.knit.md
 .Rproj.user
-
-
 # extracted data
 twigw/
+valle/
+*.bz2
+*_files/

@@ -15,33 +15,51 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, size = "sma
 
 ## Librerías
 En esta sección ocuparemos las siguientes librerías:
-```{r packages}
-pkgs <- c("sp", "sf", "raster", "rgdal")
-sapply(pkgs, require,  character.only = TRUE)
+```{r packages, results = "hide"}
+pkgs <- list(
+  spatial_structures = c("sp", "sf"),
+  spatial_manipulation = c("raster", "rgdal", "maptools", "dismo"),
+  general_manipulation = c("dplyr", "jsonlite", "magrittr"),
+  spatial_visualization = c("ggmap", "maps")
+)
+sapply(unlist(pkgs), require,  character.only = TRUE)
+```
+
+## Datos
+```{r sources}
+pueblos_magicos_source <- "http://puebla.gob.mx/datos_abiertos/pueblos_magicos.kml"
+idx_humedad_source <- "http://www.conabio.gob.mx/informacion/gis/maps/geo/twigw.zip"
+mexico_json_source <- paste0(
+  "https://gist.githubusercontent.com/",
+  "ponentesincausa/46d1d9a94ca04a56f93d/raw/",
+  "a05f4e2b42cf981e31ef9f6f9ee151a060a38c25/",
+  "mexico.json"
+)
 ```
 
 ## Drivers
 ```{r drivers}
-head(st_drivers(), 3)
-head(ogrDrivers(), 3)
-head(gdalDrivers(), 3)
+st_drivers() %>% head(3)
+ogrDrivers() %>% head(3)
+gdalDrivers() %>% head(3)
 ```
 
 ## Importando datos con `sf`
+
 ### Shapefiles
 ```{r st_read_shapefiles}
-example_sf_shapefile <- st_read(system.file("shape/nc.shp", package = "sf"))
+example_sf_shapefile <- st_read("files/valle", "eje_vial")
 ```
 
 ### KML
 ```{r st_read_kml}
-example_sf_kml <- st_read("http://puebla.gob.mx/datos_abiertos/pueblos_magicos.kml")
+example_sf_kml <- st_read(pueblos_magicos_source)
 ```
 
-## Importando datos con `sf`
+## Importando datos con `sf` (cont.)
 ### JSON
 ```{r st_read_json}
-example_sf_json <- st_read("files/mexico.json")
+example_sf_json <- st_read(mexico_json_source)
 ```
 
 ### Database Connections
@@ -53,11 +71,12 @@ example_sf_json <- st_read("files/mexico.json")
 ## Importando datos con `rgdal`
 ### Shapefiles
 ```{r read_sp_shapefile}
-example_sp_shapefile <- readOGR(system.file("shape", package = "sf"),"nc")
+example_sp_shapefile <- readOGR(system.file("shape", "nc.shp", package = "sf"))
 ```
 
 ### KML
 ```{r read_sp_kml}
+# download.file(pueblos_magicos_source, "files/pueblos_magicos.kml")
 example_sp_kml <- readOGR(
   dsn = "files/pueblos_magicos.kml",
   layer = "PlaceMarks"
@@ -67,6 +86,7 @@ example_sp_kml <- readOGR(
 ## Importando datos con `rgdal` (cont.)
 ### JSON
 ```{r read_sp_json}
+# download.file(mexico_json_source, "files/mexico.json")
 example_sp_json <- readOGR("files/mexico.json")
 ```
 
@@ -80,14 +100,28 @@ example_sp_jpg <- readGDAL(system.file("pictures/Rlogo.jpg", package = "rgdal"))
 example_sp_tif <- readGDAL(system.file("pictures/cea.tif",  package = "rgdal"))
 ```
 
-
 ## Importando datos con `raster`
 ```{r read_raster_tif}
-(example_raster_tif <- raster("files/twigw/twigw.tif"))
+# unzip("files/twigw.zip")
+example_raster_tif <- raster("files/twigw/twigw.tif")
 ```
 
 ```{r read_raster_grd}
-(example_raster_grd <- brick(system.file("external/rlogo.grd", package = "raster")))
+example_raster_grd <- brick(system.file("external/rlogo.grd", package = "raster"))
+```
+## Algunas visualizaciones
+```{r plot_sf, fig.align = "center", fig.height = 3}
+plot(example_sf_json, max.plot = 1, col = "white")
+plot(example_sf_kml, add = T, col = "brown", cex = 0.7, pch = 19)
+example_sf_shapefile %>% 
+  filter(TIPOVIAL %in% "CARRETERA") %>% 
+  plot(add = T, col = "red")
+```
+
+## Algunas visualizaciones (cont.)
+```{r plot_sp, fig.align="center"}
+custom_palette <- colorRampPalette(c("lightblue", "darkblue"))
+plot(example_raster_tif, col = custom_palette(1000), axes = FALSE)
 ```
 
 ## Escribiendo datos
@@ -107,3 +141,56 @@ Con `rgdal`:
 # writeOGR(spatial_object, "file.json", driver = "GeoJSON")
 ```
 
+# Recolección de datos
+## Global Biodiversity Information Facility
+```{r gbif, cache = TRUE}
+example_crs <- CRS("+proj=longlat +datum=WGS84")
+ab_extent = extent(c(-99.5, -98.5, 19, 19.7))
+ab <- gbif(
+  genus = "Ambystoma", species = "mexicanum", ext = ab_extent,
+  geo = TRUE, removeZeros = TRUE
+) %>% subset(!is.na(.$lon) & !is.na(.$lat))
+coordinates(ab) <- ~ lon + lat
+crs(ab) <- example_crs
+str(ab, max.level = 2)
+```
+
+## Geocoding
+```{r geocoding, cache = TRUE}
+(mexico_big_cities <- data.frame(
+  address = c("Mexico City", "Cuernavaca", "Guadalajara", "Puebla", "Monterrey"),
+  stringsAsFactors = FALSE
+) %>%  mutate_geocode(address))
+coordinates(mexico_big_cities) <- ~ lon + lat
+crs(mexico_big_cities) <- example_crs
+```
+
+## Recolectando datos (cont.)
+
+### Mapas clase `map` y coherción a `SpatialLinesDataFrame`
+```{r mexico}
+(mexico_sl <- map2SpatialLines(map("world", "mexico", plot = FALSE), proj4string = example_crs))
+```
+
+### `contourLines` y coherción a `SpatialLinesDataFrame`
+```{r volcano}
+(volcano_sl <- ContourLines2SLDF(contourLines(volcano)))
+```
+
+## Otras librerías para recolectar datos
+- `inegiR` (DENUE)
+- `nominatim` (Geocoding)
+- `rgbif` (Species Occurrence)
+- `spocc` (Species Occurrence)
+- `OpenStreetMap` (raster)
+- `osmdata` (raster)
+- `opencage` (Geocoding)
+- `tmap` (maps)
+- `googlewat` (geocoding)
+- `nasadata` (raster)
+- `rnoaa`
+- `rwunderground`
+- `banxicoR` (No tiene nada que ver, LOL)
+- [Más fuentes](opendata)
+
+[opendata]: https://github.com/ropensci/opendata

@@ -76,7 +76,8 @@ Más en la siguiente [liga](cran_spatial_tasks)
 ```{r packages}
 pkgs <- c(
   "magrittr", "Rcpp", "data.table", "sp", "raster", "sf", "rgdal", "geosphere",
-  "dismo", "maps", "maptools", "ggplot2", "ggmap", "jsonlite", "rasterVis"
+  "dismo", "maps", "maptools", "ggplot2", "ggmap", "jsonlite", "rasterVis", "igraph",
+  "tmaps", "leaftlet"
 )
 # install.packages(pkgs, repos = "https://cran.itam.mx/")
 ```

@@ -1,0 +1,449 @@
+---
+title: "Análisis de datos geoespaciales"
+subtitle: "Manipulación"
+author: "Jhosse Paul Márquez Ruíz"
+date: "`r format(Sys.Date(), '%d de %B del %Y')`"
+output: 
+  ioslides_presentation: 
+    smaller: yes
+    widescreen: yes
+---
+
+```{r set_options, echo = FALSE, include = FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, warning = FALSE, message = FALSE, size = "small",
+  fig.align = "center", fig.height = 3
+)
+```
+
+## Librerías
+En esta sección ocuparemos las siguientes librerías:
+
+- `sp` y `st`: Estructuras espaciales
+- `rgdal`, `raster` y `rgeos`: Manipulación y predicados
+- `rgeos`, `ggmap` y `geosphere`: Utilidades y manipulación
+
+```{r packages, warning=FALSE, error=FALSE, message=FALSE, results="hide"}
+hidropalette <- colorRampPalette(c("lightblue", "darkblue"))
+pkgs <- list(
+  spatial_data_structures = c("sp", "sf"),
+  spatial_manipulation = c("raster", "rgdal", "rgeos", "geosphere"),
+  spatial_vizualization = c("ggmap"),
+  general_manipulation = c("magrittr", "stringr", "dplyr")
+)
+sapply(unlist(pkgs), require, character = TRUE, warn = FALSE, quietly = TRUE)
+```
+
+En esta sección tenemos como objetivo manipular objetos espaciales. Esto incluye
+seleccionar, filtrar, unir y limpar datos espaciales. Además incluimos los
+predicados espaciales más comunes y los métodos de interés sobre las diferentes
+clases.
+
+## Datos
+```{r loading, cache = TRUE}
+# municipios_source = paste0(
+#   "https://gist.githubusercontent.com/diegovalle/5129746/raw/",
+#   "c1c35e439b1d5e688bca20b79f0e53a1fc12bf9e/mx_tj.json"
+# )
+# download.file(municipios_source, "files/mx_tj.json")
+st_layers("files/mx_tj.json")
+sp_lines <- readOGR("files/valle", "eje_vial", encoding = "UTF-8", verbose = F)
+sp_mexico <- readOGR("files/mexico.json", encoding = "UTF-8", use_iconv = T, verbose = F)
+sp_crs <- crs(sp_mexico, asText = TRUE)
+sp_estados <- readOGR("files/mx_tj.json", "states", encoding = "UTF-8", use_iconv = T, verbose = F, p4s = sp_crs)
+sp_municipios <- readOGR("files/mx_tj.json", "municipalities", encoding = "UTF-8", use_iconv = T, verbose = F, p4s = sp_crs)
+sp_pueblos_magicos <- readOGR("files/pueblos_magicos.kml", p4s = sp_crs)
+
+st_mexico <- st_read("files/mexico.json", quiet = T)
+st_cdmx <- st_mexico[23 ,]
+st_municipios <- st_read("files/mx_tj.json", "municipalities", quiet = T)
+
+exrh <- raster("files/twigw/twigw.tif")
+```
+
+# Manipulacion con sp
+
+## Métodos de `SpatialLines`
+```{r line_length}
+sp_line <- sp_lines %>%
+  slot("lines") %>%
+  extract2(2138) %>% 
+  slot("Lines") %>% 
+  extract2(1)
+LineLength(sp_line, longlat = TRUE)
+LineLength(sp_line, longlat = TRUE, sum = FALSE)
+```
+
+## Métodos de `SpatialLines` (cont.)
+```{r lines_length}
+# Explorar código fuente
+sapply(head(sp_lines@lines), LinesLength, longlat = TRUE)
+```
+
+```{r spatial_lines_lengthsj}
+# Explorar código fuente
+SpatialLinesLengths(SL = sp_lines[1:5, ], longlat = TRUE)
+```
+
+```{r spatial_lines_midpoints}
+getSpatialLinesMidPoints(sp_lines[1:5, ])
+```
+
+## Extracción de datos
+```{r sp_data}
+sp_municipios%>% data.frame %>% class
+sp_municipios%>% slot("data") %>% class
+
+sp_municipios%>% slot("data") %>% head
+```
+
+## Extraer geometría
+```{r sp_geometry}
+sp_municipios %>% geometry %>% class
+sp_municipios %>% geom %>% class
+sp_municipios %>% geom %>% head
+```
+
+## Extraer attributos
+```{r sp_extract}
+sp_municipios %>% names
+sp_municipios$mun_name %>% head
+```
+
+## Mutate
+```{r sp_mutate}
+sp_municipios$id <- paste(
+  sp_municipios$state_code,
+  sp_municipios$mun_code,
+  sep = "_"
+)
+sp_municipios
+```
+
+## Merge (no spatial info)
+```{r sp_merge}
+new_values <- data.frame(
+  state_code = sp_estados$state_code,
+  value = rnorm(length(sp_estados))
+)
+merge(sp_estados, new_values) %>% class
+merge(sp_estados, new_values) %>% `$`("value")
+```
+
+## Filter
+```{r sp_filter}
+# sp_estados[str_detect(sp_estados$state_name, "Baja"), ]
+sp_estados %>% subset(str_detect(.$state_name, "Baja"))
+sp_estados %>% subset(str_detect(.$state_name, "Baja")) %>% plot
+```
+
+
+## Agregación de objetos sp
+```{r sp_aggregate}
+sp_mexico %>% aggregate
+sp_mexico %>% aggregate %>% plot
+```
+
+
+## Buffers
+En caso de que las geometrías de nuestros datos espaciales no sean validas,
+no es posible agregarlas. En caso de los polígonos, estos deben ser cerrados,
+iniciar donde terminan y no tener intersecciones entre sí.
+
+```{r sp_gIsValid}
+gIsValid(sp_estados)
+gIsValid(sp_municipios)
+
+tryCatch(aggregate(sp_estados), error = function (e) print(e))
+tryCatch(aggregate(sp_municipios), error = function (e) print(e))
+```
+
+## Buffers (cont.)
+Para solucionar este error, podemos expandir la geometría hasta la intersección
+con un buffer de distancia 0.
+
+```{r sp_gBuffer}
+sp_municipios <- gBuffer(sp_municipios, byid = TRUE, width = 0)
+sp_estados <- gBuffer(sp_estados, byid = TRUE, width = 0)
+
+par(mfrow = c(1, 2))
+aggregate(sp_municipios) %>% plot
+aggregate(sp_municipios, by = sp_estados, FUN = length) %>% plot
+```
+
+## Unir objetos sp
+```{r sp_bind, }
+grilla <- raster(sp_mexico, ncol = 2, nrow = 2) %>% as("SpatialPolygonsDataFrame")
+raster::bind(sp_mexico, grilla)
+raster::bind(sp_mexico, grilla) %>% plot
+```
+
+## Erase
+```{r sp_erase}
+sp_estados - grilla[2:3, ]
+raster::erase(sp_estados, grilla[2:3, ]) %>% plot
+```
+
+## Intersect
+```{r sp_intersect}
+sp_estados * grilla[2:3, ]
+raster::intersect(sp_estados, grilla[2:3, ]) %>% plot
+```
+
+## Crop
+```{r sp_crop}
+cuadrante <- sp_estados[24, ] %>% bbox %>% extent()
+raster::crop(sp_estados, cuadrante)
+plot(crop(sp_estados, cuadrante))
+```
+
+## Union
+```{r}
+raster::union(sp_mexico, grilla)
+raster::union(sp_mexico, grilla) %>% plot(col = rainbow(length(.)))
+```
+
+## Cover
+```{r sp_cover}
+cover(sp_mexico, grilla)
+cover(sp_mexico, grilla) %>% plot
+```
+
+## Diferencia simétrica
+```{r sp_symdif}
+cuadrante <- as(cuadrante, "SpatialPolygons")
+proj4string(cuadrante) <- proj4string(sp_mexico)
+symdif(sp_mexico, cuadrante)
+symdif(sp_mexico, cuadrante) %>% plot(col = rainbow(length(.)))
+```
+
+## over y extract
+```{r sp_over_extract}
+(sp_pueblos_magicos %over% sp_mexico)[, 1:5]
+# over(sp_pueblos_magicos, sp_mexico)
+# extract(mexico, sp_pueblos_magicos)$name
+```
+
+# geosphere: Spherical Trigonometry (y otras utilidades)
+
+## Áreas, perímetros y centroides
+```{r sp_area_perimeter_centroid}
+data.frame(
+  estado = sp_mexico$name,
+  area = areaPolygon(sp_mexico),
+  perimetro = perimeter(sp_mexico),
+  centroide = centroid(sp_mexico)
+)
+``` 
+
+## Distancias punto-punto y punto-línea
+- `distCosine`
+- `distHaversine`
+- `distGeo`
+- `distMeeus`
+- `distRhumb`
+- `distVincentySphere`
+- `distVincentyEllipsoid`
+
+```{r sp_dist2Line}
+distVincentyEllipsoid(sp_pueblos_magicos[1, ], sp_pueblos_magicos)
+distRhumb(sp_pueblos_magicos[1, ], sp_pueblos_magicos)
+distm(sp_pueblos_magicos) %>% set_colnames(sp_pueblos_magicos$Name)
+dist2Line(centroid(sp_mexico[23, ]), sp_lines[1:5, ])
+```
+
+# Manipulacion con st
+
+## Predicados `dplyr`
+```{r st_dplyr}
+st_municipios %>%
+  filter(state_code == 9) %>%
+  mutate(id = 1:nrow(.))  %>%
+  select(-state_code)
+```
+
+## Distancias y longitudes (perímetros)
+```{r st_area_length_distance}
+st_area(st_mexico)
+st_length(st_cdmx)
+
+```
+## Centroides y distancias
+```{r st_centroids_distance}
+st_mexico %>% st_centroid %>% st_geometry()
+st_distance(st_centroid(st_mexico), st_centroid(st_cdmx))
+```
+
+## Predicados espaciales
+```{r st_predicates}
+# st_intersects(st_mexico) %>% head(3)
+# st_disjoint(st_mexico, st_cdmx)
+# st_touches(st_mexico, st_cdmx)
+# st_crosses(st_mexico, st_cdmx) # Tiene sentido para líneas, e.g., vías, carreteras
+# st_whitin(st_mexico, st_cdmx)
+# st_contains(st_mexico, st_cdmx)
+# st_contains_properly(st_mexico, st_cdmx)
+# st_overlaps(st_mexico, st_cdmx)
+# st_equals(st_mexico)
+# st_covers(st_mexico)
+# st_covered_by(st_mexico)
+st_relate(st_mexico) %>% extract(1:5, 1:5) # Representación DE9-IM
+```
+
+## Operaciones geometricas unarias
+```{r st_unary}
+# st_simplify
+# st_triangulate
+# st_voronoi
+# st_polygonize
+# st_line_merge
+# st_centroid
+# st_point_on_surface
+# st_segmentize
+par(mfrow = c(1, 3))
+st_buffer(st_mexico[1], 1) %>% st_geometry %>% plot(col = rainbow(length(.)))
+st_boundary(st_mexico[1]) %>% st_geometry %>% plot(col = rainbow(length(.)))
+st_convex_hull(st_mexico[1]) %>% st_geometry %>% plot(col = rainbow(length(.)))
+```
+
+## Aggregate
+```{r st_aggregate, fig.height = 5} 
+par(mfrow = c(1, 2))
+st_municipios %>% st_geometry %>% plot(col = sample(rainbow(length(.))))
+st_municipios %>%
+  st_buffer(0) %>%
+  aggregate(by = list(st_municipios$state_code), length) %>%
+  st_geometry %>% 
+  plot(col = sample(rainbow(length(.))))
+```
+  
+## Operaciones geometricas binarias
+```{r st_binary}
+par(mfrow = c(1, 4))
+st_erase = function(x, y) st_difference(x, st_union(st_combine(y)))
+st_union(st_mexico[2, ], st_mexico[3, ]) %>% st_geometry %>% plot(col = "blue")
+st_intersection(st_cdmx, st_mexico) %>% st_geometry %>% plot(col = "red")
+st_difference(st_mexico[1:5, ], st_mexico) %>% st_geometry %>% plot(col = sample(rainbow(length(.))))
+st_erase(st_mexico, st_mexico[1:5, ]) %>% st_geometry %>% plot(col = sample(rainbow(length(.))))
+```
+
+# Manipulación con raster
+
+## Algebra sobre RasterLayer
+```{r raster_algebra}
+hcdmx <- crop(exrh, sp_mexico[23, ])
+hpuebla <- crop(exrh, sp_mexico[20, ])
+exr <- raster(ncol = 10, nrow = 10, vals = 1:100)
+
+getValues(exr + 10) %>% range
+round(exr) %>% getValues %>% range
+sqrt(exr)
+```
+
+## Algebra sobre RasterStack
+```{r stack_algebra}
+exr[] <- 1
+exs1 <- stack(exr, exr + 1)
+exs2 <- stack(exr + 2, exr + 3, exr + 4, exr + 5)
+exs1 + exs2
+```
+
+## calc/overlay
+```{r raster_calc_overlay, fig.height = 5}
+hpuebla_with_na <- calc(hpuebla, function (x) ifelse(x > 10, x, NA))
+par(mfrow = c(1, 2))
+plot(hpuebla_with_na)
+overlay(hpuebla, hpuebla_with_na, fun = function (x, y) x / y) %>% plot
+```
+
+## Summaries sobre RasterStack
+```{r stack_summaries}
+mean(exs1, exs2)
+stack(exs1, exs2, sum(exs1, exs2)) %>% sum
+```
+
+## Summaries sobre RasterStack por celda
+```{r}
+stack(exs1, exs2, sum(exs1, exs2)) %>% cellStats("summary")
+```
+
+## mask/cover
+```{r raster_mask_cover, fig.height = 5}
+par(mfrow = c(1, 2))
+mask(hpuebla, hpuebla_with_na) %>% plot
+mask(hpuebla, hpuebla_with_na) %>% cover(hpuebla) %>% plot
+```
+
+## reclassify/subs
+```{r raster_reclassify_subs, fig.height=5}
+hpuebla_reclass <- reclassify(hpuebla, c(5, 8, 1, 8, 10, 2, 10, 15, 3))
+hpuebla_substitued <- subs(hpuebla_reclass, data.frame(id = 1:2, v = 5:4))
+par(mfrow = c(1, 2))
+plot(hpuebla_reclass)
+plot(hpuebla_substitued)
+```
+
+## aggregate/disaggregate/res
+```{r raster_aggregate}
+hpuebla %>% res
+hpuebla %>% aggregate(10) %>% res
+hpuebla %>% aggregate(10) %>% disaggregate(10) %>% res
+```
+
+## aggregate/disaggregate/res (cont.)
+```{r raster_aggregate_plot, fig.height=5}
+par(mfrow = c(1, 2))
+hpuebla %>% plot
+hpuebla %>% aggregate(10) %>% plot
+```
+
+## focal
+```{r raster_focal, fig.height=5}
+par(mfrow = c(1, 3))
+hpuebla_with_na %>% plot(col = hidropalette(100))
+focal(hpuebla_with_na, matrix(1, ncol = 3, nrow = 3), fun = mean, na.rm = T) %>%
+  plot(col = hidropalette(100))
+focal(hpuebla_with_na, matrix(0.1, ncol = 9, nrow = 9), fun = mean, na.rm = T) %>%
+  plot(col = hidropalette(100))
+```
+
+## flip/rotate
+```{r raster_flip_rotate_t}
+raster(xmn = 0, xmx = 360, ymn = -90, ymx = 90) %>% rotate
+par(mfrow = c(1, 2))
+hpuebla %>% plot
+hpuebla %>% flip("y") %>% plot
+```
+
+## clump/boundaries
+```{r raster_clump_boundaries, fig.height=5}
+par(mfrow = c(1, 2))
+hpuebla_with_na %>% clump %>% plot
+hpuebla_with_na %>% boundaries %>% plot
+```
+
+## area y estadísticas por zonas
+```{r raster_area_zonal}
+hpuebla_areas <- hpuebla_with_na %>% area
+zonal(hpuebla_areas, hpuebla_with_na, "sum")
+
+zonal(hpuebla_areas, hpuebla_with_na, "count") # freq(hpuebla_with_na)
+```
+
+## Tablas de contingencia
+```{r raster_crosstab}
+crosstab(hpuebla, hpuebla_with_na) %>% head(15)
+```
+
+## Crop
+```{r raster_crop, fig.height=5}
+plot(hcdmx, col = hidropalette(100))
+plot(sp_mexico[23, ], add = T, lwd = 2)
+```
+
+## Merge
+```{r raster_merge, fig.height=5}
+merge(hcdmx, hpuebla) %>% plot
+plot(sp_mexico[23, ], add = T)
+plot(sp_mexico[20, ], add = T)
+```
