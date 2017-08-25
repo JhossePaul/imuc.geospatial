@@ -1,19 +1,15 @@
 ---
-title: "Análisis de datos geoespaciales"
+title: "Análisis de datos geoespaciales<img src='images/logo-kantar.jpg' class='top-left logo'/><img src='images/logo-imuc.png' class='top-right logo'/>"
 subtitle: "Input/Output"
 author: "Jhosse Paul Márquez Ruíz"
 date: "`r format(Sys.Date(), '%d de %B del %Y')`"
-output: 
-  ioslides_presentation: 
-    smaller: yes
-    widescreen: yes
 ---
 
 ```{r set_options, echo = FALSE, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, size = "small")
 ```
 
-## Librerías
+# Librerías
 En esta sección ocuparemos las siguientes librerías:
 ```{r packages, results = "hide"}
 pkgs <- list(
@@ -25,7 +21,14 @@ pkgs <- list(
 sapply(unlist(pkgs), require,  character.only = TRUE)
 ```
 
-## Datos
+# Objetivos
+- Importar datos vectoriales
+- Importar datos raster
+- Exportar datos
+- Obtener datos de bases públicas
+
+---
+# Datos
 ```{r sources}
 pueblos_magicos_source <- "http://puebla.gob.mx/datos_abiertos/pueblos_magicos.kml"
 idx_humedad_source <- "http://www.conabio.gob.mx/informacion/gis/maps/geo/twigw.zip"
@@ -37,44 +40,52 @@ mexico_json_source <- paste0(
 )
 ```
 
-## Drivers
+---
+# Drivers
 ```{r drivers}
 st_drivers() %>% head(3)
 ogrDrivers() %>% head(3)
 gdalDrivers() %>% head(3)
 ```
 
-## Importando datos con `sf`
+---
+class: inverse middle
+# Importando datos con `sf`
 
-### Shapefiles
+---
+# Shapefiles
 ```{r st_read_shapefiles}
 example_sf_shapefile <- st_read("files/valle", "eje_vial")
 ```
 
-### KML
+# KML
 ```{r st_read_kml}
 example_sf_kml <- st_read(pueblos_magicos_source)
 ```
 
-## Importando datos con `sf` (cont.)
-### JSON
+---
+# JSON
 ```{r st_read_json}
 example_sf_json <- st_read(mexico_json_source)
 ```
 
-### Database Connections
+# Database Connections
 ```{r st_read_db}
 # st_read("PG:dbname=postgis", "meuse")
 # st_read_db(conn, table, query, geom_column)
 ```
 
-## Importando datos con `rgdal`
-### Shapefiles
+---
+class: inverse middle
+# Importando datos con `rgdal`
+
+---
+# Shapefiles
 ```{r read_sp_shapefile}
 example_sp_shapefile <- readOGR(system.file("shape", "nc.shp", package = "sf"))
 ```
 
-### KML
+# KML
 ```{r read_sp_kml}
 # download.file(pueblos_magicos_source, "files/pueblos_magicos.kml")
 example_sp_kml <- readOGR(
@@ -83,34 +94,43 @@ example_sp_kml <- readOGR(
 )
 ```
 
-## Importando datos con `rgdal` (cont.)
-### JSON
+---
+# JSON
 ```{r read_sp_json}
 # download.file(mexico_json_source, "files/mexico.json")
 example_sp_json <- readOGR("files/mexico.json")
 ```
 
-### JPG
+# JPG
 ```{r read_sp_jpg}
 example_sp_jpg <- readGDAL(system.file("pictures/Rlogo.jpg", package = "rgdal"))
 ```
 
-## Importando datos con `rgdal` (cont.)
+---
+# GeoTIFF
 ```{r read_sp_tif}
 example_sp_tif <- readGDAL(system.file("pictures/cea.tif",  package = "rgdal"))
 ```
 
-## Importando datos con `raster`
+---
+class: inverse middle
+# Importando datos con `raster`
+
+---
+# GeoTIFF
 ```{r read_raster_tif}
 # unzip("files/twigw.zip")
 example_raster_tif <- raster("files/twigw/twigw.tif")
 ```
 
+# Grid de `raster`
 ```{r read_raster_grd}
 example_raster_grd <- brick(system.file("external/rlogo.grd", package = "raster"))
 ```
-## Algunas visualizaciones
-```{r plot_sf, fig.align = "center", fig.height = 3}
+
+---
+# Datos vectoriales importados
+```{r plot_sf, fig.height=6}
 plot(example_sf_json, max.plot = 1, col = "white")
 plot(example_sf_kml, add = T, col = "brown", cex = 0.7, pch = 19)
 example_sf_shapefile %>% 
@@ -118,13 +138,18 @@ example_sf_shapefile %>%
   plot(add = T, col = "red")
 ```
 
-## Algunas visualizaciones (cont.)
-```{r plot_sp, fig.align="center"}
+---
+# Datos raster importados
+```{r plot_sp, fig.height=6}
 custom_palette <- colorRampPalette(c("lightblue", "darkblue"))
 plot(example_raster_tif, col = custom_palette(1000), axes = FALSE)
 ```
 
-## Escribiendo datos
+---
+class: inverse middle
+# Escribiendo datos
+
+---
 Con `sf`:
 ```{r write_sf}
 # st_write(single_feature, "file.json")
@@ -141,8 +166,12 @@ Con `rgdal`:
 # writeOGR(spatial_object, "file.json", driver = "GeoJSON")
 ```
 
+---
+class: inverse middle
 # Recolección de datos
-## Global Biodiversity Information Facility
+
+---
+# Global Biodiversity Information Facility
 ```{r gbif, cache = TRUE}
 example_crs <- CRS("+proj=longlat +datum=WGS84")
 ab_extent = extent(c(-99.5, -98.5, 19, 19.7))
@@ -155,7 +184,8 @@ crs(ab) <- example_crs
 str(ab, max.level = 2)
 ```
 
-## Geocoding
+---
+# Geocoding
 ```{r geocoding, cache = TRUE}
 (mexico_big_cities <- data.frame(
   address = c("Mexico City", "Cuernavaca", "Guadalajara", "Puebla", "Monterrey"),
@@ -165,19 +195,20 @@ coordinates(mexico_big_cities) <- ~ lon + lat
 crs(mexico_big_cities) <- example_crs
 ```
 
-## Recolectando datos (cont.)
 
-### Mapas clase `map` y coherción a `SpatialLinesDataFrame`
+---
+# Librería `map`
 ```{r mexico}
 (mexico_sl <- map2SpatialLines(map("world", "mexico", plot = FALSE), proj4string = example_crs))
 ```
 
-### `contourLines` y coherción a `SpatialLinesDataFrame`
+# `contourLines`
 ```{r volcano}
 (volcano_sl <- ContourLines2SLDF(contourLines(volcano)))
 ```
 
-## Otras librerías para recolectar datos
+---
+# Otras librerías para recolectar datos
 - `inegiR` (DENUE)
 - `nominatim` (Geocoding)
 - `rgbif` (Species Occurrence)
@@ -190,7 +221,6 @@ crs(mexico_big_cities) <- example_crs
 - `nasadata` (raster)
 - `rnoaa`
 - `rwunderground`
-- `banxicoR` (No tiene nada que ver, LOL)
 - [Más fuentes](opendata)
 
 [opendata]: https://github.com/ropensci/opendata

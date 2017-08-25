@@ -1,18 +1,15 @@
 ---
-title: "Análisis de datos geoespaciales"
+title: "Análisis de datos geoespaciales<img src='images/logo-kantar.jpg' class='top-left logo'/><img src='images/logo-imuc.png' class='top-right logo'/>"
 subtitle: "Introducción"
 author: "Jhosse Paul Márquez Ruíz"
 date: "`r format(Sys.Date(), '%d de %B del %Y')`"
-output: 
-  ioslides_presentation: 
-    smaller: yes
-    widescreen: yes
 ---
 
 ```{r set_options, echo = FALSE, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, size = "small")
 ```
-## Datos espaciales
+
+# Datos espaciales
 
 - Datos que representan ubicaciones, formas y tamaños de entidades en el planeta.
 - Generalmente acompañados de atributos o metadatos.
@@ -22,7 +19,8 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, size = "sma
 Estos objetos representan un reto para la ciencia de datos, ya que su almacenamiento
 y procesamiento no se realiza de manera convencional debido a su estructura.
 
-## Estructura de datos espaciales
+---
+# Tipos de datos espaciales
 - Datos vectoriales:
     + Puntos: Dimensión 1. Cada punto es representado por un par de codenadas (x, y).
     + Líneas: Dimensión 2. Múltiples puntos conectados en un orden.
@@ -34,7 +32,8 @@ y procesamiento no se realiza de manera convencional debido a su estructura.
   las mediciones en el área que abarque. El tamaño de la celda da la propiedad
   de resolución.
 
-## Soporte en software
+---
+# Soporte en software
 - GIS:
     + ArcGIS
     + OpenGIS
@@ -52,7 +51,8 @@ y procesamiento no se realiza de manera convencional debido a su estructura.
     + Scala (GeoSparkl, SpatialSpark)
     + R
 
-## Librerías en R
+---
+# Librerías en R
 - Data structures
     + sp
     + sf
@@ -71,8 +71,8 @@ y procesamiento no se realiza de manera convencional debido a su estructura.
 
 Más en la siguiente [liga](cran_spatial_tasks)
 
-## Instalación
-
+---
+# Instalación
 ```{r packages}
 pkgs <- c(
   "magrittr", "Rcpp", "data.table", "sp", "raster", "sf", "rgdal", "geosphere",
@@ -82,7 +82,8 @@ pkgs <- c(
 # install.packages(pkgs, repos = "https://cran.itam.mx/")
 ```
 
-## Fuentes de datos
+---
+# Fuentes de datos
 - [INEGI](marco_geoestadistico_mexico) y [CONABIO](conabio_gis)
 - [Global Administration Areas](global_admin_areas)
 - [Global Biodiversity Information Facility](gbif) y [International Union for Conservation of Nature](iucn)

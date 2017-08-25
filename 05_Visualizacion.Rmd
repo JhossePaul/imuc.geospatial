@@ -1,0 +1,32 @@
+---
+title: "Análisis de datos geoespaciales"
+subtitle: "Visualización"
+author: "Jhosse Paul Márquez Ruíz"
+date: "`r format(Sys.Date(), '%d de %B del %Y')`"
+---
+
+```{r set_options, echo = FALSE, include = FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, warning = FALSE, message = FALSE,
+  fig.align = "center", fig.height = 5
+)
+```
+
+## Librerías
+En esta sección ocuparemos las siguientes librerías:
+
+- `ggmap`, `ggspatial`, `ggalt`: Mejoras a `ggplot2`
+- `rasterVis`: Visualización de objetos Raster*
+- `tmaps`: Mapas temáticos
+- `plotKML` y `leaflet`: mapas interactivos
+
+```{r packages, warning=FALSE, error=FALSE, message=FALSE, results="hide"}
+hidropalette <- colorRampPalette(c("lightblue", "darkblue"))
+pkgs <- list(
+  spatial_data_structures = c("sp", "sf"),
+  spatial_manipulation = c("raster", "rgdal", "rgeos", "geosphere"),
+  spatial_vizualization = c("ggmap"),
+  general_manipulation = c("magrittr", "stringr", "dplyr")
+)
+sapply(unlist(pkgs), require, character = TRUE, warn = FALSE, quietly = TRUE)
+```
