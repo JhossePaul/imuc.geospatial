@@ -1,5 +1,5 @@
 ---
-title: "Análisis de datos geoespaciales"
+title: "Análisis de datos geoespaciales<img src='images/logo-kantar.jpg' class='top-left logo'/><img src='images/logo-imuc.png' class='top-right logo'/>"
 subtitle: "Visualización"
 author: "Jhosse Paul Márquez Ruíz"
 date: "`r format(Sys.Date(), '%d de %B del %Y')`"
@@ -12,7 +12,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-## Librerías
+# Librerías
 En esta sección ocuparemos las siguientes librerías:
 
 - `ggmap`, `ggspatial`, `ggalt`: Mejoras a `ggplot2`
@@ -21,12 +21,198 @@ En esta sección ocuparemos las siguientes librerías:
 - `plotKML` y `leaflet`: mapas interactivos
 
 ```{r packages, warning=FALSE, error=FALSE, message=FALSE, results="hide"}
-hidropalette <- colorRampPalette(c("lightblue", "darkblue"))
 pkgs <- list(
-  spatial_data_structures = c("sp", "sf"),
-  spatial_manipulation = c("raster", "rgdal", "rgeos", "geosphere"),
-  spatial_vizualization = c("ggmap"),
-  general_manipulation = c("magrittr", "stringr", "dplyr")
+  general_manipulation = c("magrittr", "dplyr", "KernSmooth"),
+  general_visualization = c("ggplot2"),
+  spatial_data_structures = c("sp", "sf", "raster"),
+  spatial_manipulation = c("raster", "rgdal", "maptools", "rgeos"),
+  spatial_visualization = c("ggmap", "ggspatial", "choroplethr", "tmap", "plotKML", "leaflet"),
+  spatial_public_data = c("dismo"),
+  visualization_extras = c("ggalt", "choroplethrAdmin1", "ggthemes", "viridis", "RColorBrewer")
 )
 sapply(unlist(pkgs), require, character = TRUE, warn = FALSE, quietly = TRUE)
+```
+
+---
+# Polígonos de México
+```{r mexico, cache = TRUE}
+sp_mexico <- readOGR("files/mexico.json", verbose = F, encoding = "UTF-8", use_iconv = T)
+sp_mexico$id <-  seq_along(sp_mexico)
+mexico_extent <- sp_mexico %>% bbox %>% extent
+
+ggmexico <- get_map("mexico", zoom = 4, maptype = "toner", source = "stamen")
+
+data("admin1.regions")
+```
+
+---
+# Observaciones de __Panthera onca__ (jaguar)
+```{r jaguar, cache = TRUE}
+sp_jaguar <- gbif(genus = "Panthera", species = "onca", ext = mexico_extent, geo = TRUE, removeZeros = TRUE)
+
+coordinates(sp_jaguar) <- ~ lon + lat
+projection(sp_jaguar) <- crs(sp_mexico)
+
+sp_jaguar <- intersect(sp_jaguar, sp_mexico)
+sp_jaguar$id <- sp_jaguar$object <- seq_along(sp_jaguar)
+
+raster_jaguar <- raster(sp_jaguar, ncol = 20, nrow = 20)
+raster_jaguar <- rasterize(sp_jaguar["collectionID"], raster_jaguar, fun = "count")
+jaguar_density <- sp_jaguar %>% coordinates %>% bkde2D(0.7)
+jaguar_density <- contourLines(jaguar_density$x1, jaguar_density$x2, jaguar_density$fhat) %>%
+  ContourLines2SLDF(proj4string = crs(sp_jaguar)) %>% 
+  gPolygonize
+```
+
+
+---
+# Feminicidios en México
+```{r feminicidios, cache = TRUE}
+# https://www.google.com/maps/d/viewer?mid=174IjBzP-fl_6wpRHg5pkGSj2egE
+sp_feminicidios <- readOGR(
+  dsn = "files/feminicidios_en_mexico.kml",
+  layer = "Feminicidios 2017 (1055 casos) ",
+  p4s = crs(sp_mexico, asText = TRUE), verbose = FALSE
+)
+
+feminicidios_x_estado <- over(sp_feminicidios, sp_mexico) %>% use_series("name") %>% table %>% 
+  as.data.frame %>% 
+  set_names(c("name", "feminicidios"))
+sp_mexico <- merge(sp_mexico, feminicidios_x_estado)
+
+feminicidios_choropleth <- feminicidios_x_estado %>% 
+  rename(region = name, value = feminicidios) %>% 
+  filter(region != "") %>% 
+  mutate(region = ifelse( str_detect(region, "Distrito"), region, paste("estado de", region) )) %>% 
+  arrange(region) %>% 
+  mutate(region = subset(admin1.regions, country == "mexico", select = 2, drop = T))
+```
+
+---
+# Datos tidy
+```{r tidy_data}
+sp_mexico_tidy <- geom(sp_mexico) %>%
+  merge(sp_mexico@data, by.x = "object", by.y = "id", all.x = TRUE) %>% 
+  mutate(id = paste(object, part, sep = "_"))
+
+sp_jaguar_tidy <- geom(sp_jaguar) %>%  merge(sp_jaguar, by = "object") %>% 
+  filter(gns_name %in% names(table(gns_name) %>% subset(. > 20))) %>% 
+  mutate(gns_name = droplevels(gns_name))
+```
+
+---
+# base
+```{r base}
+plot(sp_mexico, main = substitute(paste("Observaciones de ", italic("Panthera onca"), " (jaguar)")))
+sp_mexico %>%
+  gridlines(easts = seq(-118, -86, 5), norths = seq(14, 32, 2.5)) %>%
+  lines(col = "gray80", lwd = 2, expandBB = 0.5)
+points(sp_jaguar, pch = 19)
+```
+
+---
+# spplot (lattice)
+```{r lattice}
+spplot(
+  obj = sp_mexico, zcol = "feminicidios", col.regions = magma(33),
+  sp.layout = list("sp.points", sp_feminicidios, pch = 19, cex = 0.2, col = "blue")
+)
+```
+
+---
+# ggplot2
+```{r ggplot2_points}
+ggplot(sp_mexico_tidy) + 
+  geom_polygon(alpha = 0.8, aes(x = x, y = y, fill = feminicidios, group = paste(object, part))) + 
+  geom_point(data = data.frame(sp_feminicidios), aes(x = coords.x1, y = coords.x2), colour = "white", size = 0.3) + 
+  scale_fill_viridis() + coord_map("azequalarea")
+```
+
+---
+# ggplot2
+```{r ggplot2_density}
+ggplot(sp_mexico_tidy) + 
+  geom_polygon(aes(x = x, y = y, group = paste(object, part)), colour = "black", fill = "white") + 
+  stat_density_2d(data = data.frame(sp_feminicidios), geom = "polygon", alpha = 0.5, aes(x = coords.x1, y = coords.x2, fill = ..level..)) +
+  scale_fill_viridis() + theme_fivethirtyeight() + theme(legend.position = "none")
+```
+
+---
+# ggmap
+```{r ggmap, cache = TRUE}
+ggmap(ggmexico) + 
+  ylim(c(14, 32)) + xlim(-119, -86) +
+  stat_density2d(data = sp_jaguar_tidy, geom = "polygon", bins = 5, aes(x, y, colour = gns_name)) +
+  theme_fivethirtyeight() + theme(legend.position = "none")
+```
+
+---
+# ggspatial
+```{r ggspatial}
+ggosm(type = "osmgrayscale") + 
+  geom_spatial(sp_mexico, aes(fill = feminicidios)) +
+  geom_spatial(sp_feminicidios, colour = "red", size = 0.5)
+```
+  
+---
+# choroplethr
+```{r choroplethr}
+admin1_choropleth("mexico", feminicidios_choropleth, num_colors = 1)
+```
+
+---
+# tmap
+```{r tmap}
+tm_shape(sp_mexico) + tm_grid() + tm_polygons("feminicidios") +
+  tm_text("name", size = 0.5) + tm_shape(sp_feminicidios) +
+  tm_dots() + tm_style_classic()
+```
+
+---
+# leaflet
+```{r leaftlet}
+leaflet(sp_feminicidios) %>% 
+  addTiles() %>% 
+  addMarkers(popup = ~ Description, clusterOptions = markerClusterOptions())
+```
+
+---
+# plotKML
+```{r kml_spatial_points, eval = FALSE}
+shape = "http://www.iconsdb.com/icons/preview/white/jaguar-xxl.png" 
+kml_open("files/jaguar.kml", "output", overwrite = TRUE, kml_open = TRUE)
+kml_layer.SpatialPoints(
+  obj = sp_jaguar[c("basisOfRecord", "catalogNumber")],
+  subfolder.name = "Observaciones de jaguar",
+  shape = shape, size = 3, colour = as.factor(basisOfRecord), colour_scale = brewer.pal(6, "Spectral"),
+  html.table = paste(
+    paste("Catalog number:", sp_jaguar$catalogNumber),
+    paste("Event date:", sp_jaguar$eventDate),
+    paste("State:", sp_jaguar$adm1),
+    paste("Basis of record:", sp_jaguar$basisOfRecord),
+    sep = "\n"
+  )
+)
+```
+
+---
+# plotKML (cont.)
+```{r kml_legend, eval = FALSE}
+kml_legend.bar(
+  x = sp_jaguar$basisOfRecord, z.lim = 1:6,
+  legend.file = "files/jaguar.png", legend.pal = brewer.pal(6, "Spectral")
+)
+kml_screen(image.file="files/jaguar.png", sname = "Legend")
+```
+
+---
+# plotKML (cont.)
+```{r kml_polygons, eval = FALSE}
+kml_layer.SpatialPolygons(
+  obj = jaguar_density,
+  subfolder.name = "Curvas de nivel de observaciones de jaguar",
+  width = 2
+)
+kml_close("files/jaguar.kml")
+kml_View("files/jaguar.kml")
 ```

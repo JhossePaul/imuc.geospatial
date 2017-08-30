@@ -28,3 +28,5 @@ twigw/
 valle/
 *.bz2
 *_files/
+*.kml
+*cache*/

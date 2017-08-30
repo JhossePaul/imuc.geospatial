@@ -14,7 +14,7 @@ class: center, middle, inverse, title-slide
 # Análisis de datos geoespaciales<img src='images/logo-kantar.jpg' class='top-left logo'/><img src='images/logo-imuc.png' class='top-right logo'/>
 ## Estructuras de datos
 ### Jhosse Paul Márquez Ruíz
-### 25 de agosto del 2017
+### 30 de agosto del 2017
 
 ---
 
@@ -88,7 +88,7 @@ example_points &lt;- data.frame(longitud = runif(10),   latitud = runif(10))
 ```
 ## class       : SpatialPoints 
 ## features    : 10 
-## extent      : 0.03754705, 0.9482906, 0.03967887, 0.9958484  (xmin, xmax, ymin, ymax)
+## extent      : 0.01176645, 0.9928887, 0.1819754, 0.8435944  (xmin, xmax, ymin, ymax)
 ## coord. ref. : +proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0
 ```
 
@@ -102,8 +102,8 @@ spatial_points %&gt;% bbox
 
 ```
 ##                 min       max
-## longitud 0.03754705 0.9482906
-## latitud  0.03967887 0.9958484
+## longitud 0.01176645 0.9928887
+## latitud  0.18197536 0.8435944
 ```
 
 `summary` devuelve el bounding box, el número de puntos y la proyección.
@@ -116,8 +116,8 @@ spatial_points %&gt;% summary
 ## Object of class SpatialPoints
 ## Coordinates:
 ##                 min       max
-## longitud 0.03754705 0.9482906
-## latitud  0.03967887 0.9958484
+## longitud 0.01176645 0.9928887
+## latitud  0.18197536 0.8435944
 ## Is projected: FALSE 
 ## proj4string :
 ## [+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0]
@@ -145,13 +145,13 @@ spatial_points %&gt;% coordinates %&gt;% head
 ```
 
 ```
-##       longitud   latitud
-## [1,] 0.7756208 0.9958484
-## [2,] 0.9482906 0.2276554
-## [3,] 0.8968817 0.2672699
-## [4,] 0.1090663 0.9889908
-## [5,] 0.7260055 0.1271260
-## [6,] 0.2439113 0.1059758
+##        longitud   latitud
+## [1,] 0.28780832 0.1819754
+## [2,] 0.15714830 0.8372771
+## [3,] 0.99288874 0.7612201
+## [4,] 0.43818291 0.2467550
+## [5,] 0.82914484 0.6854724
+## [6,] 0.01176645 0.3417418
 ```
 
 ---
@@ -171,12 +171,12 @@ metadata &lt;- data.frame(random_name = sample(LETTERS, 10))
 ```
 ## class       : SpatialPointsDataFrame 
 ## features    : 10 
-## extent      : 0.03754705, 0.9482906, 0.03967887, 0.9958484  (xmin, xmax, ymin, ymax)
+## extent      : 0.01176645, 0.9928887, 0.1819754, 0.8435944  (xmin, xmax, ymin, ymax)
 ## coord. ref. : +proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0 
 ## variables   : 1
 ## names       : random_name 
-## min values  :           D 
-## max values  :           Y
+## min values  :           E 
+## max values  :           T
 ```
 
 ---
@@ -355,7 +355,7 @@ example_raster
 ## coord. ref. : +proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0 
 ## data source : in memory
 ## names       : layer 
-## values      : 0.03917602, 254.8816  (min, max)
+## values      : 0.1850871, 254.9877  (min, max)
 ```
 
 ---
@@ -389,9 +389,9 @@ example_raster3[] &lt;- rgeom(ncell(example_raster3), 0.5)
 ## resolution  : 0.02, 0.02  (x, y)
 ## extent      : 0, 1, 0, 1  (xmin, xmax, ymin, ymax)
 ## coord. ref. : +proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0 
-## names       :     layer.1,     layer.2,     layer.3 
-## min values  :  0.03917602, 66.00000000,  0.00000000 
-## max values  :    254.8816,    141.0000,     10.0000
+## names       :    layer.1,    layer.2,    layer.3 
+## min values  :  0.1850871, 69.0000000,  0.0000000 
+## max values  :   254.9877,   136.0000,    13.0000
 ```
 
 ---
@@ -426,9 +426,9 @@ plotRGB(raster_stack)
 ## extent      : 0, 1, 0, 1  (xmin, xmax, ymin, ymax)
 ## coord. ref. : +proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0 
 ## data source : in memory
-## names       :     layer.1,     layer.2,     layer.3 
-## min values  :  0.03917602, 66.00000000,  0.00000000 
-## max values  :    254.8816,    141.0000,     10.0000
+## names       :    layer.1,    layer.2,    layer.3 
+## min values  :  0.1850871, 69.0000000,  0.0000000 
+## max values  :   254.9877,   136.0000,    13.0000
 ```
 
 ---

@@ -82,6 +82,8 @@ pkgs <- c(
 # install.packages(pkgs, repos = "https://cran.itam.mx/")
 ```
 
+Además necesitaremos instalar [Google Earth](google_earth)
+
 ---
 # Fuentes de datos
 - [INEGI](marco_geoestadistico_mexico) y [CONABIO](conabio_gis)
@@ -118,3 +120,4 @@ pkgs <- c(
 [sedac]: http://sedac.ciesin.columbia.edu/data/sets/browse
 [hydrosheds]: https://hydrosheds.cr.usgs.gov/dataavail.php
 [waterloo]: https://uwaterloo.ca/library/geospatial/collections/us-and-world-geospatial-data-resources
+[google_earth]: https://www.google.es/earth/download/gep/agree.html
